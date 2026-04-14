@@ -1,5 +1,5 @@
 from typing import Protocol
 
 
-class QAService(Protocol):
+class QAPort(Protocol):
     def answer(self, question: str) -> str: ...

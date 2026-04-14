@@ -1,10 +1,9 @@
 import uvicorn
-from src.main import app
-
 
 if __name__ == "__main__":
+    # Import string is required for reload (spawns a child that imports the app).
     uvicorn.run(
-        app,
+        "src.main:app",
         host="127.0.0.1",
         port=8000,
         reload=True,

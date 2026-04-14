@@ -1,5 +1,5 @@
 from typing import Protocol
 
 
-class SearchService(Protocol):
+class SearchPort(Protocol):
     def search(self, query: str) -> list[str]: ...

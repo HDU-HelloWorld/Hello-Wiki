@@ -1,6 +1,6 @@
-# Hello Wiki Backend (MVP Scaffold)
+# Hello Wiki Backend (Layered MVP Scaffold)
 
-This directory contains an MVP backend skeleton that is minimally connected and runnable.
+This directory contains a layered MVP backend skeleton that is minimally connected and runnable.
 It intentionally excludes business logic implementations.
 
 ## Run
@@ -21,13 +21,21 @@ It intentionally excludes business logic implementations.
 
 ## Directory Layout
 
-- `src/api`: router assembly, endpoint placeholders, API dependencies
-- `src/core`: settings, context, and database wiring placeholders
-- `src/models`: SQLModel table definitions (minimal fields only)
-- `src/schemas`: request/response schema placeholders
-- `src/repositories`: repository interface placeholders
-- `src/services`: service interface placeholders
-- `src/workers`: async task registration placeholders
+- `src/api`: external routes, request/response conversion, application wiring
+- `src/application`: use-case orchestration layer
+- `src/core`: config, request context, auth/audit/tracing placeholders
+- `src/domain`: domain entities and abstract ports
+- `src/infra`: external adapters/providers implementing domain ports
+- `src/workers`: asynchronous orchestration boundaries and task registration placeholders
+
+## Layer Dependency Rule
+
+- Allowed: `api -> application -> domain`
+- Allowed: `application -> infra` (through dependency/provider wiring)
+- Allowed: `workers -> application`
+- Allowed: `all -> core`
+- Forbidden: `domain -> api|infra|workers`
+- Forbidden: `api -> infra` direct calls
 
 ## Scope
 
