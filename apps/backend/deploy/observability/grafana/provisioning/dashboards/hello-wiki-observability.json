@@ -1,0 +1,68 @@
+{
+  "uid": "hello-wiki-observability",
+  "title": "Hello Wiki Observability",
+  "tags": ["hello-wiki", "logs"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "logs",
+      "title": "Backend Logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "Loki"
+      },
+      "targets": [
+        {
+          "expr": "{job=\"hello-wiki-backend\"}"
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Trace ID Field Present",
+      "datasource": {
+        "type": "loki",
+        "uid": "Loki"
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"hello-wiki-backend\"} |= \"trace=\" [5m]))"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Workspace ID Field Present",
+      "datasource": {
+        "type": "loki",
+        "uid": "Loki"
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"hello-wiki-backend\"} |= \"workspace=\" [5m]))"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      }
+    }
+  ]
+}

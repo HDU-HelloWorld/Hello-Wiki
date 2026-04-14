@@ -1,0 +1,54 @@
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - ALL_PROXY=
+      - NO_PROXY=localhost,127.0.0.1,phoenix,loki,promtail,grafana,host.containers.internal
+    ports:
+      - "6006:6006"
+
+  loki:
+    image: grafana/loki:3.0.0
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - ALL_PROXY=
+      - NO_PROXY=localhost,127.0.0.1,phoenix,loki,promtail,grafana,host.containers.internal
+    command: ["-config.file=/etc/loki/loki-config.yml"]
+    volumes:
+      - ./loki-config.yml:/etc/loki/loki-config.yml:ro
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    environment:
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - ALL_PROXY=
+      - NO_PROXY=localhost,127.0.0.1,phoenix,loki,promtail,grafana,host.containers.internal
+    command: ["-config.file=/etc/promtail/promtail-config.yml"]
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - ../../data/logs:/var/log/hello-wiki:ro
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - ALL_PROXY=
+      - NO_PROXY=localhost,127.0.0.1,phoenix,loki,promtail,grafana,host.containers.internal
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - loki
+

@@ -9,15 +9,50 @@ description = "Minimal runnable backend scaffold for Hello Wiki."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "fastapi>=0.115.0",
-  "sqlmodel>=0.0.22",
-  "taskiq>=0.11.10",
-  "uvicorn[standard]>=0.30.0",
+    # Web 框架与模型
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "sqlmodel>=0.0.22",
+    "pydantic-settings>=2.4.0", # 环境变量管理
+    "python-multipart>=0.0.9", # 支持文件上传
+    # 数据库驱动
+    "psycopg2-binary>=2.9.9",   # PostgreSQL 驱动
+    "asyncpg>=0.29.0",          # 异步数据库操作
+    "redis>=5.0.0",             # 任务队列与缓存
+    # 异步任务处理 (TaskIQ)
+    "taskiq>=0.11.10",
+    "taskiq-redis>=0.5.0",      # TaskIQ Redis 代理
+    # AI & RAG 核心 (LlamaIndex & Instructor)
+    "llama-index>=0.11.0",
+    "llama-index-vector-stores-postgres>=0.2.0", # pgvector 支持
+    "llama-index-llms-openai>=0.2.0",            # 兼容 DeepSeek/OpenAI 格式
+    "llama-index-embeddings-openai>=0.2.0",
+    "instructor>=1.3.0",                         # 强约束 LLM 输出 JSON
+    "sqlalchemy>=2.0.49",                       # 显式使用 SQLAlchemy API
+    # 可观测性 (全链路追踪)
+    "opentelemetry-api>=1.41.0,<2.0.0",
+    "opentelemetry-sdk>=1.41.0,<2.0.0",
+    "opentelemetry-exporter-otlp>=1.41.0,<2.0.0",
+    "opentelemetry-instrumentation>=0.62b0,<1.0.0",
+    "opentelemetry-instrumentation-fastapi>=0.62b0,<1.0.0",
+    "openinference-instrumentation-llama-index>=4.3.9",
+    "llama-index-callbacks-arize-phoenix>=0.2.0", # RAG 专用追踪
 ]
 
 [project.optional-dependencies]
+# 开发环境工具
 dev = [
-  "ruff>=0.5.0",
+    "ruff>=0.15.0",     # 极速 Linter 和 Formatter
+    "mypy>=1.11.0",     # 静态类型检查 (Clean Arch 必备)
+    "pytest>=8.0.0",    # 单元测试
+    "pytest-asyncio",   # 异步测试插件
+    "pre-commit",       # 提交前检查工具
+    "import-linter>=2.0",  # 架构约束检查
+]
+
+worker = [
+    "magic-pdf[full]>=0.6.0", # MinerU 核心库
+    "paddlepaddle-gpu>=2.6.0; sys_platform == 'linux'", # 如果有 GPU
 ]
 
 [tool.setuptools]
@@ -29,3 +64,88 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
+# 开启所有核心检查 (E: Error, F: Pyflakes, I: Import Sort, N: Naming)
+select = ["E", "F", "I", "N", "UP", "ASYNC"]
+ignore = ["D100", "D104"] # 忽略模块开头的 docstring 要求
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+# MyPy 配置：确保 Clean Architecture 的接口层类型正确
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+# ============================================================================
+# Import-Linter 架构约束配置（基于教程标准化）
+# ============================================================================
+# 文档：https://import-linter.readthedocs.io/
+# 检查：lint-imports
+
+[tool.importlinter]
+# 根包名称：src 下所有导入都以 src.* 开始
+root_packages = ["src"]
+include_external_packages = true
+
+# ---- Contract 1: 分层架构（Clean Architecture + DDD） ----
+[[tool.importlinter.contracts]]
+name = "Clean Architecture Layers"
+type = "layers"
+# 分层顺序：从高到低（入口 → 业务编排 → 基础设施 → 领域 → 核心）
+layers = [
+    "src.api",              # 入口层：HTTP/API 网关
+    "src.workers",           # 入口层：后台任务/作业调度
+    "src.application",      # 应用层：业务流程编排、查询处理
+    "src.infrastructure",   # 基础设施层：数据库、外部服务实现
+    "src.domain",           # 领域层：业务规则、实体、接口定义
+    "src.core",             # 核心层：通用配置、工具函数
+]
+
+# ---- Contract 2: 应用模块独立性（确保 chat/wiki/ingest 不互依赖） ----
+[[tool.importlinter.contracts]]
+name = "Application modules should be independent"
+type = "independence"
+modules = [
+    "src.application.chat",
+    "src.application.wiki",
+    "src.application.ingest",
+    "src.application.maintenance",
+]
+# 注：它们都可以依赖共享的 infrastructure 和 core，但彼此之间不能依赖
+
+# ---- Contract 3: 禁止反向导入（核心层纯净） ----
+[[tool.importlinter.contracts]]
+name = "Core layer should not import upper layers"
+type = "forbidden"
+source_modules = ["src.core"]
+forbidden_modules = [
+    "src.api",
+    "src.application",
+    "src.domain",
+    "src.infrastructure",
+    "src.workers",
+]
+
+# ---- Contract 4: 禁止框架依赖在业务逻辑层泄露 ----
+[[tool.importlinter.contracts]]
+name = "Domain layer should not depend on web framework"
+type = "forbidden"
+source_modules = ["src.domain"]
+forbidden_modules = [
+    "fastapi",
+    "uvicorn",
+    "sqlmodel",  # 数据库 ORM 是实现细节，应该在 infrastructure
+]
+# 注：实际代码中可能有例外，用 ignore_imports 处理
+ignore_imports = [
+    # 如果业务逻辑需要特定的导入，可以在这里列出
+    # 例："src.domain.chat -> sqlmodel",
+]

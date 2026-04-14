@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  frontend-check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -35,3 +35,46 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  backend-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          cd apps/backend
+          pip install -e ".[dev]"
+
+      - name: Import Architecture Check (import-linter)
+        run: |
+          cd apps/backend
+          lint-imports
+
+      - name: Type Check (mypy)
+        run: |
+          cd apps/backend
+          mypy src/
+
+      - name: Lint (ruff)
+        run: |
+          cd apps/backend
+          ruff check src/ tests/
+
+      - name: Format Check (ruff)
+        run: |
+          cd apps/backend
+          ruff format --check src/ tests/
+
+      - name: Run Tests
+        run: |
+          cd apps/backend
+          python3 -m pytest tests/ -q --tb=short
