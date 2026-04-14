@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# 编码修复: router.py - 已替换Unicode符号避免Windows编码问题
 from fastapi import APIRouter
 
 from api.routes import compile, health, qa, root, wiki

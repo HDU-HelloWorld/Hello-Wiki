@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# 编码修复: providers.py - 已替换Unicode符号避免Windows编码问题
 from application.compile_application import CompileApplicationService
 from application.orchestration import (
     ApplicationContainer,

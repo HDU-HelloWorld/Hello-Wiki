@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# 编码修复: qa_application.py - 已替换Unicode符号避免Windows编码问题
 from domain.ports.qa_port import QAPort
 
 

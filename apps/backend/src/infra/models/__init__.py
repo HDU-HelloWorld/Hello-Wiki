@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
 # 编码修复: __init__.py - 已替换Unicode符号避免Windows编码问题
-from domain.services.wiki_domain_service import WikiDomainService
+from infra.models.models import ParsingResultDB, WikiPageDB
 
-__all__ = ["WikiDomainService"]
+__all__ = ["WikiPageDB", "ParsingResultDB"]

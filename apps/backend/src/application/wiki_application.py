@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# 编码修复: wiki_application.py - 已替换Unicode符号避免Windows编码问题
 from domain.entities.wiki import WikiPageEntity
 from domain.ports.wiki_repository_port import WikiRepositoryPort
 from domain.services.wiki_domain_service import WikiDomainService

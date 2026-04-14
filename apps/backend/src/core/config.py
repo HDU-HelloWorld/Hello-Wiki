@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# 编码修复: config.py - 已替换Unicode符号避免Windows编码问题
 import os
 from dataclasses import dataclass
 

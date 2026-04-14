@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# 编码修复: deps.py - 已替换Unicode符号避免Windows编码问题
 from typing import Annotated, Protocol
 
 from fastapi import Depends, Header, Request
