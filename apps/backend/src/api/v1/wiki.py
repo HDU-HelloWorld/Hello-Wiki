@@ -5,7 +5,7 @@ Wiki API 端点
 
 import json
 import os
-from typing import List, Optional
+from typing import List, Dict, Any, Optional, Union
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from datetime import datetime
@@ -71,27 +71,44 @@ def get_index_path(workspace_id: UUID) -> str:
     return os.path.join(get_storage_path(workspace_id), "pages.json")
 
 
-def read_pages(workspace_id: UUID) -> List[dict]:
+def read_pages(workspace_id: UUID) -> List[Dict[str, Any]]:
     """读取所有页面"""
     index_path = get_index_path(workspace_id)
     if not os.path.exists(index_path):
         return []
     with open(index_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        data = json.load(f)
+        if isinstance(data, list):
+            return data
+        return []
 
 
-def write_pages(workspace_id: UUID, pages: List[dict]) -> None:
+def write_pages(workspace_id: UUID, pages: List[Dict[str, Any]]) -> None:
     """写入所有页面"""
     index_path = get_index_path(workspace_id)
     with open(index_path, 'w', encoding='utf-8') as f:
         json.dump(pages, f, ensure_ascii=False, indent=2, default=str)
 
 
-def get_next_id(pages: List[dict]) -> int:
+def get_next_id(pages: List[Dict[str, Any]]) -> int:
     """获取下一个可用 ID"""
     if not pages:
         return 1
-    return max(p.get("id", 0) for p in pages) + 1
+    max_id = 0
+    for page in pages:
+        page_id = page.get("id", 0)
+        if isinstance(page_id, int) and page_id > max_id:
+            max_id = page_id
+    return max_id + 1
+
+
+def convert_page_datetimes(page: Dict[str, Any]) -> Dict[str, Any]:
+    """转换页面中的日期时间字符串为 datetime 对象"""
+    if isinstance(page.get("created_at"), str):
+        page["created_at"] = datetime.fromisoformat(page["created_at"])
+    if isinstance(page.get("updated_at"), str):
+        page["updated_at"] = datetime.fromisoformat(page["updated_at"])
+    return page
 
 
 # ========== Router ==========
@@ -121,15 +138,12 @@ async def list_pages(
     # 分页
     paginated = pages_data[offset:offset + limit]
     
-    # 转换 datetime 字符串为 datetime 对象
-    for p in paginated:
-        if isinstance(p.get("created_at"), str):
-            p["created_at"] = datetime.fromisoformat(p["created_at"])
-        if isinstance(p.get("updated_at"), str):
-            p["updated_at"] = datetime.fromisoformat(p["updated_at"])
+    # 转换 datetime 字符串
+    for page in paginated:
+        convert_page_datetimes(page)
     
     return WikiPageListResponse(
-        items=[WikiPageResponse(**p) for p in paginated],
+        items=[WikiPageResponse(**page) for page in paginated],
         total=total,
     )
 
@@ -151,10 +165,7 @@ async def get_page(
     
     for page in pages_data:
         if page.get("id") == page_id:
-            if isinstance(page.get("created_at"), str):
-                page["created_at"] = datetime.fromisoformat(page["created_at"])
-            if isinstance(page.get("updated_at"), str):
-                page["updated_at"] = datetime.fromisoformat(page["updated_at"])
+            convert_page_datetimes(page)
             return WikiPageResponse(**page)
     
     raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
@@ -187,7 +198,7 @@ async def create_page(
             )
     
     now = datetime.now()
-    new_page = {
+    new_page: Dict[str, Any] = {
         "id": get_next_id(pages_data),
         "title": request.title,
         "content": request.content,
@@ -264,8 +275,7 @@ async def update_page(
             write_pages(workspace_id, pages_data)
             
             # 转换回 datetime 对象用于响应
-            page["created_at"] = datetime.fromisoformat(page["created_at"]) if isinstance(page.get("created_at"), str) else page.get("created_at")
-            page["updated_at"] = datetime.fromisoformat(page["updated_at"]) if isinstance(page.get("updated_at"), str) else page.get("updated_at")
+            convert_page_datetimes(page)
             
             return WikiPageResponse(**page)
     
@@ -312,26 +322,23 @@ async def search_pages(
     pages_data = read_pages(workspace_id)
     
     keyword_lower = q.lower()
-    matched = []
+    matched: List[WikiPageResponse] = []
     
     for page in pages_data:
         title = page.get("title", "").lower()
         content = page.get("content", "").lower()
         
         if keyword_lower in title or keyword_lower in content:
-            if isinstance(page.get("created_at"), str):
-                page["created_at"] = datetime.fromisoformat(page["created_at"])
-            if isinstance(page.get("updated_at"), str):
-                page["updated_at"] = datetime.fromisoformat(page["updated_at"])
+            convert_page_datetimes(page)
             matched.append(WikiPageResponse(**page))
     
     return matched
 
 
-@router.get("/tree", response_model=List[dict])
+@router.get("/tree", response_model=List[Dict[str, Any]])
 async def get_tree(
     workspace_id: UUID = Depends(get_workspace_id),
-) -> List[dict]:
+) -> List[Dict[str, Any]]:
     """
     获取目录树结构
     
@@ -345,8 +352,8 @@ async def get_tree(
     
     pages_data = read_pages(workspace_id)
     
-    def build_tree(parent_id: Optional[int] = None) -> List[dict]:
-        result = []
+    def build_tree(parent_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        result: List[Dict[str, Any]] = []
         for page in pages_data:
             if page.get("parent_id") == parent_id:
                 result.append({
@@ -359,10 +366,10 @@ async def get_tree(
     return build_tree(None)
 
 
-@router.get("/stats", response_model=dict)
+@router.get("/stats", response_model=Dict[str, Any])
 async def get_stats(
     workspace_id: UUID = Depends(get_workspace_id),
-) -> dict:
+) -> Dict[str, Any]:
     """
     获取 Wiki 统计信息
     
@@ -378,15 +385,14 @@ async def get_stats(
     
     total_pages = len(pages_data)
     
-    # 收集所有标签
-    all_tags = set()
+    all_tags: set = set()
     max_version = 0
     for page in pages_data:
         tags = page.get("tags", [])
         if isinstance(tags, list):
             all_tags.update(tags)
         version = page.get("version", 0)
-        if version > max_version:
+        if isinstance(version, int) and version > max_version:
             max_version = version
     
     return {
