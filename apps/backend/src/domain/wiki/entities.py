@@ -1,69 +1,70 @@
+"""
+Wiki 领域实体
+定义知识库的核心业务对象
+"""
+
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from enum import StrEnum
+from datetime import datetime
+from typing import Optional
 from uuid import UUID, uuid4
+from enum import StrEnum
 
 
 class WikiStatus(StrEnum):
-    ARCHIVED = "ARCHIVED"
-    DRAFT = "DRAFT"
-    PUBLISHED = "PUBLISHED"
-    DISPUTED = "DISPUTED"
-
-
-class ReferenceType(StrEnum):
-    DIRECT = "DIRECT"
-    INFERRED = "INFERRED"
-    CONFLICT = "CONFLICT"
+    """Wiki 页面状态"""
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+    DELETED = "deleted"
 
 
 @dataclass
 class WikiFact:
+    """Wiki 事实（结构化知识）"""
     key: str
     value: str
-    confidence: float
+    confidence: float = 1.0
 
 
 @dataclass
 class WikiParseReference:
+    """Wiki 解析引用（来源文档）"""
     source_document_id: str
-    reference_type: str = ReferenceType.DIRECT
+    reference_type: str
 
 
 @dataclass
 class WikiPage:
+    """Wiki 页面聚合根"""
+
     wiki_id: UUID
     workspace_id: UUID
     title: str
-    category: str
-    summary: str
-    content: str
-    status: WikiStatus
+    category: str = "general"
+    summary: str = ""
+    content: str = ""
+    status: WikiStatus = WikiStatus.ACTIVE
     facts: list[WikiFact] = field(default_factory=list)
     parse_references: list[WikiParseReference] = field(default_factory=list)
-    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    created_by: Optional[str] = None
 
-    @staticmethod
-    def create_or_update(
-        workspace_id: UUID,
-        title: str,
-        category: str,
-        summary: str,
-        content: str,
-        facts: list[WikiFact],
-        parse_references: list[WikiParseReference],
-        status: WikiStatus,
-        existing_id: UUID | None = None,
-    ) -> "WikiPage":
-        return WikiPage(
-            wiki_id=existing_id or uuid4(),
+    def update_content(self, new_content: str) -> None:
+        self.content = new_content
+        self.updated_at = datetime.now()
+
+    def update_title(self, new_title: str) -> None:
+        self.title = new_title
+        self.updated_at = datetime.now()
+
+    @classmethod
+    def create(cls, workspace_id: UUID, title: str, category: str = "general",
+               content: str = "", created_by: Optional[str] = None) -> "WikiPage":
+        return cls(
+            wiki_id=uuid4(),
             workspace_id=workspace_id,
             title=title,
             category=category,
-            summary=summary,
             content=content,
-            facts=facts,
-            parse_references=parse_references,
-            status=status,
-            updated_at=datetime.now(UTC),
+            created_by=created_by,
         )
