@@ -6,6 +6,8 @@
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy import text
 import os
+from typing import Generator
+from sqlalchemy import Engine
 
 # 数据库路径配置
 DB_PATH = os.getenv("DATABASE_URL", "sqlite:///./wiki.db")
@@ -80,12 +82,12 @@ def init_db() -> None:
     print("🎉 数据库初始化完成！")
 
 
-def get_session() -> Session:
+def get_session() -> Generator[Session, None, None]:
     """获取数据库会话（用于依赖注入）"""
     with Session(engine) as session:
         yield session
 
 
-def get_engine():
+def get_engine() -> Engine:
     """获取数据库引擎"""
     return engine

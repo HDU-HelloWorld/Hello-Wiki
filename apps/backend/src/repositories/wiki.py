@@ -27,20 +27,7 @@ class WikiRepository:
     # ========== 基础 CRUD ==========
     
     def create(self, title: str, content: str = "", tags: str = "[]", 
-               parent_id: Optional[int] = None, created_by: Optional[str] = None) -> int:
-        """
-        创建新页面
-        
-        Args:
-            title: 页面标题
-            content: Markdown 内容
-            tags: 标签 JSON 字符串
-            parent_id: 父页面 ID
-            created_by: 创建者
-            
-        Returns:
-            新页面的 ID
-        """
+            parent_id: Optional[int] = None, created_by: Optional[str] = None) -> int:
         page = WikiPage(
             title=title,
             content=content,
@@ -52,7 +39,8 @@ class WikiRepository:
         self.session.add(page)
         self.session.commit()
         self.session.refresh(page)
-        return page.id
+        # 确保返回 int 类型
+        return page.id if page.id is not None else 0
     
     def get_by_id(self, page_id: int) -> Optional[WikiPage]:
         """
@@ -67,18 +55,8 @@ class WikiRepository:
         return self.session.get(WikiPage, page_id)
     
     def get_all(self, limit: int = 100, offset: int = 0) -> List[WikiPage]:
-        """
-        获取所有页面（分页）
-        
-        Args:
-            limit: 每页数量
-            offset: 偏移量
-            
-        Returns:
-            页面列表
-        """
         statement = select(WikiPage).offset(offset).limit(limit).order_by(WikiPage.title)
-        return self.session.exec(statement).all()
+        return list(self.session.exec(statement).all())  # 添加 list()
     
     def get_count(self) -> int:
         """
@@ -172,17 +150,8 @@ class WikiRepository:
     # ========== 目录树相关 ==========
     
     def get_children(self, parent_id: Optional[int] = None) -> List[WikiPage]:
-        """
-        获取指定父页面下的直接子页面
-        
-        Args:
-            parent_id: 父页面 ID，None 表示根级页面
-            
-        Returns:
-            子页面列表
-        """
         statement = select(WikiPage).where(WikiPage.parent_id == parent_id).order_by(WikiPage.title)
-        return self.session.exec(statement).all()
+        return list(self.session.exec(statement).all())  # 添加 list()
     
     def get_tree(self, parent_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """
@@ -215,7 +184,7 @@ class WikiRepository:
         Returns:
             路径上的页面列表（从根到当前页）
         """
-        path = []
+        path: List[WikiPage] = []
         current = self.get_by_id(page_id)
         
         while current:
@@ -265,20 +234,10 @@ class WikiRepository:
     # ========== 搜索相关 ==========
     
     def search_by_title(self, keyword: str, limit: int = 50) -> List[WikiPage]:
-        """
-        按标题模糊搜索
-        
-        Args:
-            keyword: 搜索关键词
-            limit: 最大返回数量
-            
-        Returns:
-            匹配的页面列表
-        """
         statement = select(WikiPage).where(
-            WikiPage.title.contains(keyword)
+            WikiPage.title.like(f'%{keyword}%')
         ).limit(limit)
-        return self.session.exec(statement).all()
+        return list(self.session.exec(statement).all())
     
     def get_by_tags(self, tags: List[str], limit: int = 50) -> List[WikiPage]:
         """
@@ -294,14 +253,14 @@ class WikiRepository:
         # SQLite 的 JSON 查询语法
         conditions = []
         for tag in tags:
-            conditions.append(WikiPage.tags.contains(f'"{tag}"'))
+            conditions.append(WikiPage.tags.like(f'%"{tag}"%'))
         
         if not conditions:
             return []
         
         from sqlalchemy import or_
         statement = select(WikiPage).where(or_(*conditions)).limit(limit)
-        return self.session.exec(statement).all()
+        return list(self.session.exec(statement).all())
     
     def __repr__(self) -> str:
         return f"<WikiRepository(session={self.session})>"
