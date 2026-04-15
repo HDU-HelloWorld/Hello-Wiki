@@ -18,8 +18,7 @@ from src.core.observability import (
     start_observability_span,
 )
 from src.core.tracing import apply_async_context
-from src.infrastructure.ai.search_engine import KeywordSearchEngine
-from src.infrastructure.db.repositories.wiki_repo import FileSystemWikiRepository
+from src.infrastructure.wiring import build_async_wiki_repository, build_search_engine
 from src.workers.broker import broker
 
 # 提示：在这里不需要手动 import src.workers.tasks
@@ -236,11 +235,12 @@ async def run_dedupe_workflow(
                     "retry_on_error": task_context.retry_on_error,
                 }
 
-            repository = FileSystemWikiRepository(base_path=settings.STORAGE_BASE_PATH)
-            search_engine = KeywordSearchEngine()
-            workflow = DedupeWorkflow(repository=repository, search_engine=search_engine)
+            workflow = DedupeWorkflow(
+                repository=build_async_wiki_repository(),
+                search_engine=build_search_engine(),
+            )
 
-            result = workflow.execute(
+            result = await workflow.execute(
                 RunDedupeWorkflowCommand(workspace_id=task_context.workspace_id)
             )
             return {

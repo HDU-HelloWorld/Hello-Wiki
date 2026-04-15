@@ -1,26 +1,15 @@
-from dataclasses import dataclass
-from uuid import UUID
-
+from src.application.ingest.commands import CompileDocumentCommand
 from src.domain.wiki.entities import WikiFact, WikiPage
-from src.domain.wiki.services import WikiRepository
-
-
-@dataclass(frozen=True)
-class CompileDocumentCommand:
-    workspace_id: UUID
-    source_document_id: str
-    title: str
-    markdown_content: str
-    category: str = "general"
+from src.domain.wiki.repository import WikiCommandRepositoryPort
 
 
 class IngestCompilerUseCase:
     """文档编译用例骨架。"""
 
-    def __init__(self, repository: WikiRepository) -> None:
+    def __init__(self, repository: WikiCommandRepositoryPort) -> None:
         self._repository = repository
 
-    def execute(self, command: CompileDocumentCommand) -> WikiPage:
+    async def execute(self, command: CompileDocumentCommand) -> WikiPage:
         # 文档编译业务逻辑留空，后续由业务小组实现。
         raise NotImplementedError("ingest compile workflow is not implemented yet")
 
