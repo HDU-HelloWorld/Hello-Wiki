@@ -1,0 +1,106 @@
+2026-04-15 16:01:04 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | __main__ | Starting Hello Wiki Backend in DEBUG mode...
+2026-04-15 16:01:04 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Will watch for changes in these directories: ['C:\\Users\\admin\\Desktop\\Hello-Wiki\\apps\\backend']
+2026-04-15 16:01:04 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2026-04-15 16:01:04 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started reloader process [3940] using WatchFiles
+2026-04-15 16:01:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:01:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:01:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:01:06 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:01:06 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:01:07 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:01:07 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:01:07 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started server process [25300]
+2026-04-15 16:01:07 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application startup.
+2026-04-15 16:01:07 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Initializing Hello Wiki Backend services...
+2026-04-15 16:01:07 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 9 changes detected
+2026-04-15 16:12:09 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:14:35 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:19:52 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:21:18 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:21:44 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:21:44 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started server process [12616]
+2026-04-15 16:21:44 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application startup.
+2026-04-15 16:21:44 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Initializing Hello Wiki Backend services...
+2026-04-15 16:21:45 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application startup complete.
+2026-04-15 16:22:36 | INFO | Hello Wiki Backend | trace=82d041cd-5184-4424-b56f-f6bb8e642384 | workspace=- | src.api.gateway | Gateway request started: GET /docs
+2026-04-15 16:22:36 | INFO | Hello Wiki Backend | trace=82d041cd-5184-4424-b56f-f6bb8e642384 | workspace=- | src.api.gateway | Gateway request finished: GET /docs status=200 duration_ms=2.61
+2026-04-15 16:22:36 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.access | 127.0.0.1:65096 - "GET /docs HTTP/1.1" 200
+2026-04-15 16:22:38 | INFO | Hello Wiki Backend | trace=2dfbc859-fa4f-4f60-9c9b-00b83844fd5c | workspace=- | src.api.gateway | Gateway request started: GET /openapi.json
+2026-04-15 16:22:38 | INFO | Hello Wiki Backend | trace=2dfbc859-fa4f-4f60-9c9b-00b83844fd5c | workspace=- | src.api.gateway | Gateway request finished: GET /openapi.json status=200 duration_ms=74.85
+2026-04-15 16:22:38 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.access | 127.0.0.1:65096 - "GET /openapi.json HTTP/1.1" 200
+2026-04-15 16:22:46 | WARNING | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Transient error HTTPConnectionPool(host='localhost', port=6006): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001C0A5A915D0>: Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。')) encountered while exporting span batch, retrying in 0.80s.
+2026-04-15 16:22:51 | ERROR | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Failed to export span batch due to timeout, max retries or shutdown.
+2026-04-15 16:23:04 | WARNING | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Transient error HTTPConnectionPool(host='localhost', port=6006): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001C0A5AB9BD0>: Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。')) encountered while exporting span batch, retrying in 1.10s.
+2026-04-15 16:23:08 | ERROR | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Failed to export span batch due to timeout, max retries or shutdown.
+2026-04-15 16:23:34 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:25:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | __main__ | Starting Hello Wiki Backend in DEBUG mode...
+2026-04-15 16:25:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Will watch for changes in these directories: ['C:\\Users\\admin\\Desktop\\Hello-Wiki\\apps\\backend']
+2026-04-15 16:25:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2026-04-15 16:25:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started reloader process [10184] using WatchFiles
+2026-04-15 16:25:18 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:18 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:25:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started server process [17484]
+2026-04-15 16:25:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application startup.
+2026-04-15 16:25:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Initializing Hello Wiki Backend services...
+2026-04-15 16:25:20 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application startup complete.
+2026-04-15 16:25:20 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:20 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:21 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:21 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:25:21 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | watchfiles.main | 1 change detected
+2026-04-15 16:26:52 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:29:32 | INFO | Hello Wiki Backend | trace=70f7c2c9-a9dd-4a9e-986c-8bd908130acf | workspace=- | src.api.gateway | Gateway request started: POST /api/v1/wiki/pages
+2026-04-15 16:29:32 | INFO | Hello Wiki Backend | trace=70f7c2c9-a9dd-4a9e-986c-8bd908130acf | workspace=- | src.api.gateway | Gateway request finished: POST /api/v1/wiki/pages status=501 duration_ms=16.25
+2026-04-15 16:29:32 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.access | 127.0.0.1:49433 - "POST /api/v1/wiki/pages HTTP/1.1" 501
+2026-04-15 16:29:42 | WARNING | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Transient error HTTPConnectionPool(host='localhost', port=6006): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001C0A5ABB3D0>: Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。')) encountered while exporting span batch, retrying in 1.06s.
+2026-04-15 16:29:46 | ERROR | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Failed to export span batch due to timeout, max retries or shutdown.
+2026-04-15 16:30:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Shutting down
+2026-04-15 16:30:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application shutdown.
+2026-04-15 16:30:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Shutting down Hello Wiki Backend services...
+2026-04-15 16:30:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application shutdown complete.
+2026-04-15 16:30:05 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Finished server process [12616]
+2026-04-15 16:30:08 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:30:08 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started server process [18720]
+2026-04-15 16:30:08 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application startup.
+2026-04-15 16:30:08 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Initializing Hello Wiki Backend services...
+2026-04-15 16:30:08 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application startup complete.
+2026-04-15 16:31:16 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Shutting down
+2026-04-15 16:31:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application shutdown.
+2026-04-15 16:31:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Shutting down Hello Wiki Backend services...
+2026-04-15 16:31:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application shutdown complete.
+2026-04-15 16:31:17 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Finished server process [18720]
+2026-04-15 16:31:19 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:31:20 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started server process [28440]
+2026-04-15 16:31:20 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application startup.
+2026-04-15 16:31:20 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Initializing Hello Wiki Backend services...
+2026-04-15 16:31:20 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application startup complete.
+2026-04-15 16:31:39 | INFO | Hello Wiki Backend | trace=3b8958ca-3d17-475f-9afa-b7890aadb7c1 | workspace=11111111-1111-1111-1111-111111111111 | src.api.gateway | Gateway request started: GET /api/v1/wiki/pages/11111111-1111-1111-1111-111111111111
+2026-04-15 16:31:39 | INFO | Hello Wiki Backend | trace=3b8958ca-3d17-475f-9afa-b7890aadb7c1 | workspace=11111111-1111-1111-1111-111111111111 | src.api.gateway | Gateway request finished: GET /api/v1/wiki/pages/11111111-1111-1111-1111-111111111111 status=501 duration_ms=8.49
+2026-04-15 16:31:39 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.access | 127.0.0.1:54068 - "GET /api/v1/wiki/pages/11111111-1111-1111-1111-111111111111 HTTP/1.1" 501
+2026-04-15 16:31:45 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Shutting down
+2026-04-15 16:31:46 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application shutdown.
+2026-04-15 16:31:46 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Shutting down Hello Wiki Backend services...
+2026-04-15 16:31:46 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application shutdown complete.
+2026-04-15 16:31:46 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Finished server process [28440]
+2026-04-15 16:31:51 | WARNING | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Transient error HTTPConnectionPool(host='localhost', port=6006): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000208030DD110>: Failed to establish a new connection: [WinError 10061] 由于目标计算机积极拒绝，无法连接。')) encountered while exporting span batch, retrying in 1.04s.
+2026-04-15 16:31:56 | ERROR | Hello Wiki Backend | trace=no-trace-id | workspace=- | opentelemetry.exporter.otlp.proto.http.trace_exporter | Failed to export span batch due to timeout, max retries or shutdown.
+2026-04-15 16:31:59 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:31:59 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started server process [22644]
+2026-04-15 16:31:59 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application startup.
+2026-04-15 16:31:59 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Initializing Hello Wiki Backend services...
+2026-04-15 16:31:59 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application startup complete.
+2026-04-15 16:32:50 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Shutting down
+2026-04-15 16:32:50 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application shutdown.
+2026-04-15 16:32:50 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Shutting down Hello Wiki Backend services...
+2026-04-15 16:32:50 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application shutdown complete.
+2026-04-15 16:32:50 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Finished server process [22644]
+2026-04-15 16:32:53 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
+2026-04-15 16:32:53 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Started server process [28228]
+2026-04-15 16:32:53 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Waiting for application startup.
+2026-04-15 16:32:53 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.main | Initializing Hello Wiki Backend services...
+2026-04-15 16:32:54 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | uvicorn.error | Application startup complete.
+2026-04-15 16:34:14 | INFO | Hello Wiki Backend | trace=no-trace-id | workspace=- | src.infrastructure.observability.otel_runtime | OpenTelemetry configured. endpoint=http://localhost:6006/v1/traces runtime=api
