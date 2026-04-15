@@ -70,5 +70,15 @@ def get_workspace_id(x_workspace_id: str | None = Header(default=None)) -> UUID 
     return None
 
 
+def get_required_workspace_id(x_workspace_id: str | None = Header(default=None)) -> UUID:
+    workspace_id = get_workspace_id(x_workspace_id=x_workspace_id)
+    if workspace_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="workspace_id is required",
+        )
+    return workspace_id
+
+
 def get_execution_context() -> ExecutionContext | None:
     return get_execution_context_from_context()

@@ -149,3 +149,43 @@ ignore_imports = [
     # 如果业务逻辑需要特定的导入，可以在这里列出
     # 例："src.domain.chat -> sqlmodel",
 ]
+
+# ---- Contract 5: 应用层禁止依赖 API Schema（Request/Response 不得泄露到应用层） ----
+[[tool.importlinter.contracts]]
+name = "Application layer should not depend on API schemas"
+type = "forbidden"
+source_modules = ["src.application"]
+forbidden_modules = [
+    "src.api.schemas",
+]
+
+# ---- Contract 6: 路由层禁止直接依赖领域层（应经由 application/assembler） ----
+[[tool.importlinter.contracts]]
+name = "API v1 routes should not depend on domain"
+type = "forbidden"
+source_modules = ["src.api.v1"]
+forbidden_modules = [
+    "src.domain",
+]
+allow_indirect_imports = true
+
+# ---- Contract 7: Assembler 仅做模型转换，不依赖基础设施实现 ----
+[[tool.importlinter.contracts]]
+name = "API assemblers should not depend on infrastructure"
+type = "forbidden"
+source_modules = ["src.api.assemblers"]
+forbidden_modules = [
+    "src.infrastructure",
+]
+
+# ---- Contract 8: API Schema 保持 HTTP 合约纯净 ----
+[[tool.importlinter.contracts]]
+name = "API schemas should be pure HTTP contracts"
+type = "forbidden"
+source_modules = ["src.api.schemas"]
+forbidden_modules = [
+    "src.application",
+    "src.domain",
+    "src.infrastructure",
+    "src.workers",
+]

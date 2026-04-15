@@ -88,6 +88,10 @@ lint-imports
 - 禁止低层反向依赖高层。
 - `domain` 禁止依赖 FastAPI、Uvicorn 等 Web 框架。
 - `application` 内各子模块保持独立（chat/wiki/ingest/maintenance 不互相直接依赖）。
+- `application` 禁止依赖 `src.api.schemas`（Request/Response 不得泄露到应用层）。
+- `api.v1` 禁止直接依赖 `src.domain`（通过 application/assembler 间接调用）。
+- `api.assemblers` 禁止依赖 `src.infrastructure`。
+- `api.schemas` 禁止依赖 `application/domain/infrastructure/workers`。
 
 ## 3. CQRS 与骨架阶段实现约束
 
@@ -111,6 +115,12 @@ lint-imports
 - 同步仓储实现必须通过适配器再注入 async port。
 - 禁止把同步仓储直接注入 async 协议。
 
+### 3.4 API Assembler 约束
+
+- 路由层负责编排，不负责承载复杂映射逻辑。
+- Request/Response 与 Command/Query 的转换放到 `src/api/assemblers/*`。
+- 新增路由时，优先新增/复用 assembler 函数，避免在 `api/v1/*.py` 中写重复映射代码。
+
 ## 4. 依赖注入与 Wiring 约束
 
 ### 4.1 共享构建入口
@@ -133,6 +143,13 @@ lint-imports
 - 至少覆盖：
   - handler 内部注入的是 async 适配器
   - worker 路径使用共享 builder
+  - assembler 映射函数的输入/输出契约
+
+### 4.4 workspace_id 约束
+
+- header 合法性由网关统一处理（非法 UUID 返回 400）。
+- 业务必填由依赖层统一处理（`get_required_workspace_id`）。
+- 路由层禁止重复 `workspace_id is required` 判空逻辑。
 
 ## 5. 代码风格与类型约束
 
