@@ -17,9 +17,6 @@ lint-imports
 
 # 详细输出
 lint-imports --verbose
-
-# 修复模式（如果有自动修复）
-lint-imports --fix
 ```
 
 ### 3. 检查结果示例
@@ -34,6 +31,10 @@ Clean Architecture Layers: ✓ (PASS)
 Application modules should be independent: ✓ (PASS)
 Core layer should not import upper layers: ✓ (PASS)
 Domain layer should not depend on web framework: ✓ (PASS)
+Application layer should not depend on API schemas: ✓ (PASS)
+API v1 routes should not depend on domain: ✓ (PASS)
+API assemblers should not depend on infrastructure: ✓ (PASS)
+API schemas should be pure HTTP contracts: ✓ (PASS)
 
 All contracts are in compliance.
 ```
@@ -53,7 +54,7 @@ This violates the contract that higher layers can import lower layers.
 
 ## 配置说明
 
-### 4 个 Contract（约束规则）
+### 8 个 Contract（约束规则）
 
 #### 1. Clean Architecture Layers（分层架构）
 - **类型**：`layers`
@@ -62,20 +63,18 @@ This violates the contract that higher layers can import lower layers.
   ```
   api              (最高 - HTTP 入口)
   ↓
-  application      (业务编排、查询处理)
+  workers          (入口 - 异步任务调度)
   ↓
-  domain           (核心业务逻辑、实体定义)
+  application      (业务编排、查询处理)
   ↓
   infrastructure   (数据库、外部服务实现)
   ↓
-  workers          (异步任务处理)
+  domain           (核心业务逻辑、实体定义)
   ↓
   core             (最低 - 通用工具、配置)
   ```
 - **规则**：上层可以导入下层，下层不能导入上层
-- **例外处理**：
-  - `src.main` 可以导入 `workers` 和 `infrastructure`（启动初始化）
-  - `tests` 可以导入所有模块（测试需要）
+- **说明**：以 `pyproject.toml` 为准，新增例外时必须在配置中显式声明并说明原因。
 
 #### 2. Application Modules Independence（模块独立性）
 - **类型**：`independence`
@@ -99,6 +98,26 @@ This violates the contract that higher layers can import lower layers.
 - **禁止列表**：`fastapi`, `uvicorn`, `sqlmodel`
 - **原因**：DDD 原则 - 业务逻辑应该与框架无关
 - **例外处理**：若有必要，可在 `ignore_imports` 中添加
+
+#### 5. Application Layer Should Not Depend on API Schemas（应用层不依赖 API Schema）
+- **类型**：`forbidden`
+- **规则**：`src.application` 不能导入 `src.api.schemas`
+- **原因**：Request/Response 是 HTTP 契约，不应进入应用层
+
+#### 6. API v1 Routes Should Not Depend on Domain（路由层不直接依赖领域层）
+- **类型**：`forbidden`
+- **规则**：`src.api.v1` 不能直接导入 `src.domain`
+- **配置**：`allow_indirect_imports = true`，避免误伤经由 application 的合法调用链
+
+#### 7. API Assemblers Should Not Depend on Infrastructure（Assembler 不依赖基础设施）
+- **类型**：`forbidden`
+- **规则**：`src.api.assemblers` 不能导入 `src.infrastructure`
+- **原因**：Assembler 只承担模型转换职责
+
+#### 8. API Schemas Should Be Pure HTTP Contracts（Schema 保持 HTTP 合约纯净）
+- **类型**：`forbidden`
+- **规则**：`src.api.schemas` 不能导入 `src.application`、`src.domain`、`src.infrastructure`、`src.workers`
+- **原因**：API 合约模型应与业务和实现解耦
 
 ## 常见问题
 
@@ -165,12 +184,13 @@ lint-architecture:
 ┌─────────────────────┐
 │    src.api          │  ← HTTP 请求入口
 ├─────────────────────┤
+│   src.workers       │  ← 异步任务入口
+├─────────────────────┤
 │  src.application    │  ← 业务流程、查询处理
 ├─────────────────────┤
-│    src.domain       │  ← 核心业务规则、实体
-├─────────────────────┤
 │ src.infrastructure  │  ← 数据库、缓存、外部服务
-│    src.workers      │  ← 异步任务
+├─────────────────────┤
+│    src.domain       │  ← 核心业务规则、实体
 ├─────────────────────┤
 │     src.core        │  ← 配置、工具、常量
 └─────────────────────┘

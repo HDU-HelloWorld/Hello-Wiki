@@ -1,6 +1,6 @@
 from src.api.schemas.chat import AskRequest, AskResponse
 from src.api.schemas.ingest import CompileRequest, CompileResponse
-from src.api.schemas.wiki import UpsertWikiRequest, WikiItem, WikiListResponse
+from src.api.schemas.wiki import UpsertWikiRequest, WikiListResponse, WikiResponse
 from src.api.schemas.workspace import WorkspaceContextResponse
 
 __all__ = [
@@ -9,7 +9,7 @@ __all__ = [
     "CompileRequest",
     "CompileResponse",
     "UpsertWikiRequest",
-    "WikiItem",
+    "WikiResponse",
     "WikiListResponse",
     "WorkspaceContextResponse",
 ]

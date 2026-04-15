@@ -7,6 +7,8 @@
 请优先阅读并遵守统一规范文档：
 
 - `DEVELOPMENT_GUIDE.md`
+- `ARCHITECTURE_RULES.md`
+- `IMPORT_LINTER_GUIDE.md`
 
 ## 快速开始
 
@@ -107,6 +109,7 @@ PYTHONPATH="$PWD" python scripts/mvp.py
 - ✅ 日志与可观测性（结构化日志、OTel spans）
 - ✅ Worker 上下文（TaskIQ 消息处理、多租户上下文）
 - ✅ workspace_valid 边界（无 header、合法 header、非法 header）
+- ✅ API Assembler 映射契约（Request/Response 与 Command/Query 解耦）
 - ✅ 架构隔离（lint-imports contract 检查）
 
 ## 当前项目结构
@@ -127,7 +130,11 @@ PYTHONPATH="$PWD" python scripts/mvp.py
 │   ├── api/
 │   │   ├── gateway.py       ← 请求网关：租户、Trace、基础中间件
 │   │   ├── router.py        ← 路由聚合器
-│   │   ├── deps.py          ← FastAPI 依赖与 DI 容器
+│   │   ├── deps.py          ← FastAPI 依赖注入（含 required workspace 依赖）
+│   │   ├── assemblers/      ← API schema 与应用 DTO 映射
+│   │   │   ├── chat.py
+│   │   │   ├── ingest.py
+│   │   │   └── wiki.py
 │   │   ├── schemas/         ← API 层请求/响应模型（Pydantic）
 │   │   │   ├── chat.py
 │   │   │   ├── ingest.py
@@ -138,17 +145,18 @@ PYTHONPATH="$PWD" python scripts/mvp.py
 │   │       ├── ingest.py
 │   │       ├── wiki.py
 │   │       └── workspace.py
-│   ├── application/
-│   │   ├── chat/
-│   │   │   ├── chat_executor.py
-│   │   │   └── stream_handler.py
+│   │   │   ├── handlers.py
+│   │   │   └── queries.py
 │   │   ├── ingest/
+│   │   │   ├── commands.py
+│   │   │   ├── handlers.py
 │   │   │   └── compile_workflow.py
 │   │   ├── maintenance/
 │   │   │   └── dedupe_workflow.py
 │   │   └── wiki/
-│   │       ├── wiki_commands.py
-│   │       └── wiki_queries.py
+│   │       ├── commands.py
+│   │       ├── handlers.py
+│   │       └── queries.py
 │   ├── core/
 │   │   ├── config.py
 │   │   ├── context.py
@@ -164,13 +172,15 @@ PYTHONPATH="$PWD" python scripts/mvp.py
 │   │   ├── wiki/
 │   │   └── workspace/
 │   ├── infrastructure/
+│   │   ├── wiring.py        ← 共享依赖构建入口（避免 deps/tasks 重复 wiring）
 │   │   ├── ai/
 │   │   │   ├── llm_adapter.py
 │   │   │   └── search_engine.py
 │   │   ├── db/
 │   │   │   ├── base.py
+│   │   │   ├── base_repository.py
 │   │   │   ├── repositories/
-│   │   │   │   ├── chat_repo.py
+│   │   │   │   ├── async_wiki_repo_adapter.py
 │   │   │   │   └── wiki_repo.py
 │   │   │   └── session.py
 │   │   ├── observability/
@@ -186,11 +196,17 @@ PYTHONPATH="$PWD" python scripts/mvp.py
 ├── tests/
 │   ├── conftest.py
 │   ├── helpers.py
+│   ├── test_api_assemblers.py
+│   ├── test_api_contracts.py
 │   ├── test_api_deps.py
 │   ├── test_gateway.py
 │   ├── test_logging.py
 │   ├── test_main.py
 │   ├── test_observability.py
+│   ├── test_tracing.py
+│   ├── test_worker_broker.py
+│   ├── test_worker_context.py
+│   └── test_worker_tasks.py
 │   ├── test_tracing.py
 │   ├── test_worker_broker.py
 │   └── test_worker_context.py
@@ -306,6 +322,8 @@ curl http://localhost:8000/api/v1/workspace/context \
 - ✅ 所有外部服务通过 Port 接口
 - ✅ 所有日志通过 structured logger（自动带 trace ID）
 - ✅ 业务异常在 API 层统一映射为 HTTP status codes
+- ✅ Request/Response 与 Command/Query 通过 Assembler 显式映射
+- ✅ workspace_id 缺失由依赖层统一处理（`get_required_workspace_id`）
 
 ## 存储策略
 
