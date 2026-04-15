@@ -342,5 +342,5 @@ async def get_stats(
     return {
         "total_pages": total_pages,
         "total_tags": len(all_tags),
-        "max_version": 
+        "max_version": max_version,
     }
