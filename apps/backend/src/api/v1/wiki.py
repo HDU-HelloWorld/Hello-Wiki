@@ -385,7 +385,7 @@ async def get_stats(
     
     total_pages = len(pages_data)
     
-    all_tags: set = set()
+    all_tags: set[str] = set()
     max_version = 0
     for page in pages_data:
         tags = page.get("tags", [])
