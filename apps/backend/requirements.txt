@@ -1,0 +1,26 @@
+# Core
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+
+# Database
+sqlalchemy>=2.0.35
+sqlmodel>=0.0.22
+
+# Task Queue
+redis>=5.2.0
+rq>=1.16.0
+
+# Document Parsing
+PyMuPDF>=1.24.0
+python-docx>=1.1.0
+markdown>=3.7
+
+# Observability
+structlog>=24.4.0
+
+# Testing
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+httpx>=0.27.0
