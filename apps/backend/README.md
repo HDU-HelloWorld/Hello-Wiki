@@ -207,9 +207,6 @@ PYTHONPATH="$PWD" python scripts/mvp.py
 │   ├── test_worker_broker.py
 │   ├── test_worker_context.py
 │   └── test_worker_tasks.py
-│   ├── test_tracing.py
-│   ├── test_worker_broker.py
-│   └── test_worker_context.py
 ```
 
 ## API 端点示例
