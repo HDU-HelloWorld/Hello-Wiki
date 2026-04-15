@@ -6,36 +6,58 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from src.api.deps import get_workspace_id
+from src.api.deps import get_chat_ask_handler, get_chat_stream_handler, get_workspace_id
 from src.api.schemas.chat import AskRequest, AskResponse
+from src.application.chat.handlers import AskChatHandler, StreamChatHandler
+from src.application.chat.queries import AskChatQuery, StreamChatQuery
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-def _format_sse_event(event: str, data: dict[str, object]) -> str:
-    """框架层 SSE 事件格式化工具（占位实现）。"""
-    import json
-
-    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
-
-
 @router.post("/ask", response_model=AskResponse)
-def ask(
+async def ask(
     request: AskRequest,
-    workspace_id: UUID = Depends(get_workspace_id),
+    workspace_id: UUID | None = Depends(get_workspace_id),
+    handler: AskChatHandler = Depends(get_chat_ask_handler),
 ) -> AskResponse:
-    # 占位：保留接口示例，不包含业务实现。
-    raise HTTPException(status_code=501, detail="chat ask endpoint is not implemented yet")
+    if workspace_id is None:
+        raise HTTPException(status_code=400, detail="workspace_id is required")
+
+    try:
+        result = await handler.handle(
+            AskChatQuery(
+                workspace_id=workspace_id,
+                question=request.question,
+                top_k=request.top_k,
+            )
+        )
+    except NotImplementedError as exc:
+        raise HTTPException(
+            status_code=501,
+            detail="chat ask endpoint is not implemented yet",
+        ) from exc
+
+    return AskResponse(answer=result.answer, citations=result.citations)
 
 
 @router.post("/stream")
-def stream_ask(
+async def stream_ask(
     request: AskRequest,
-    workspace_id: UUID = Depends(get_workspace_id),
+    workspace_id: UUID | None = Depends(get_workspace_id),
+    handler: StreamChatHandler = Depends(get_chat_stream_handler),
 ) -> StreamingResponse:
+    if workspace_id is None:
+        raise HTTPException(status_code=400, detail="workspace_id is required")
+
+    events = await handler.handle(
+        StreamChatQuery(
+            workspace_id=workspace_id,
+            question=request.question,
+            top_k=request.top_k,
+        )
+    )
+
     def event_generator() -> Iterator[str]:
-        # 占位流示例：仅演示 SSE 结构。
-        yield _format_sse_event("start", {"workspace_id": str(workspace_id)})
-        yield _format_sse_event("end", {"done": True})
+        yield from events
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

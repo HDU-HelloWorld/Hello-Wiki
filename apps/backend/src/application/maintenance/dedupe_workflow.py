@@ -13,7 +13,8 @@ from src.domain.maintenance.entities import (
     TaskType,
 )
 from src.domain.wiki.entities import WikiPage
-from src.domain.wiki.services import WikiRepository, WikiSearchEngine
+from src.domain.wiki.repository import WikiQueryRepositoryPort
+from src.domain.wiki.services import WikiSearchEngine
 
 
 @dataclass(frozen=True)
@@ -40,11 +41,15 @@ class DedupeWorkflowResult:
 class DedupeWorkflow:
     """基于标题与内容相似度生成知识库去重任务。"""
 
-    def __init__(self, repository: WikiRepository, search_engine: WikiSearchEngine) -> None:
+    def __init__(
+        self,
+        repository: WikiQueryRepositoryPort,
+        search_engine: WikiSearchEngine,
+    ) -> None:
         self._repository = repository
         self._search_engine = search_engine
 
-    def execute(self, command: RunDedupeWorkflowCommand) -> DedupeWorkflowResult:
+    async def execute(self, command: RunDedupeWorkflowCommand) -> DedupeWorkflowResult:
         with start_observability_span(
             "llamaindex.workflow",
             "dedupe.execute",
