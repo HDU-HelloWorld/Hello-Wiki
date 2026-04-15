@@ -42,28 +42,27 @@ class WikiPage(SQLModel, table=True):
     # 元数据
     created_by: Optional[str] = Field(default=None, max_length=100, description="创建者")
     
-    def get_tags_list(self) -> List[str]:
-        """
-        将 JSON 字符串解析为标签列表
-        
-        Returns:
-            标签列表，如 ['python', 'fastapi']
-        """
-        if not self.tags:
-            return []
-        try:
-            return json.loads(self.tags)
-        except json.JSONDecodeError:
-            return []
     
-    def set_tags_list(self, tags_list: List[str]) -> None:
-        """
-        将标签列表转为 JSON 字符串存储
-        
-        Args:
-            tags_list: 标签列表
-        """
-        self.tags = json.dumps(tags_list, ensure_ascii=False)
+def get_tags_list(self) -> List[str]:
+    if not self.tags:
+        return []
+    try:
+        result = json.loads(self.tags)
+        # 添加类型断言
+        if isinstance(result, list):
+            return [str(tag) for tag in result]
+        return []
+    except json.JSONDecodeError:
+        return []
     
-    def __repr__(self) -> str:
-        return f"<WikiPage(id={self.id}, title='{self.title}', version={self.version})>"
+def set_tags_list(self, tags_list: List[str]) -> None:
+    """
+    将标签列表转为 JSON 字符串存储
+        
+        rgs:
+        tags_list: 标签列表
+    """
+    self.tags = json.dumps(tags_list, ensure_ascii=False)
+    
+def __repr__(self) -> str:
+    return f"<WikiPage(id={self.id}, title='{self.title}', version={self.version})>"
