@@ -10,12 +10,45 @@ class FileSystemWikiRepository:
         self._store = JsonFileStore(base_path)
         self._index_file = "wiki/index.json"
 
-    def upsert(self, page: WikiPage) -> None:
-        # 占位：后续实现持久化写入策略。
+    def upsert(self, page: WikiPage) -> WikiPage:
+        pages = self.list_by_workspace(page.workspace_id)
+        replaced = False
+
+        for idx, existing in enumerate(pages):
+            same_id = existing.wiki_id == page.wiki_id
+            same_title = existing.title == page.title
+            if same_id or same_title:
+                page = WikiPage.create_or_update(
+                    workspace_id=page.workspace_id,
+                    title=page.title,
+                    category=page.category,
+                    summary=page.summary,
+                    content=page.content,
+                    facts=page.facts,
+                    parse_references=page.parse_references,
+                    status=page.status,
+                    existing_id=existing.wiki_id,
+                )
+                pages[idx] = page
+                replaced = True
+                break
+
+        if not replaced:
+            pages.append(page)
+
+        self._save_workspace_pages(page.workspace_id, pages)
+        return page
+
+    def get_by_id(self, workspace_id: UUID, wiki_id: UUID) -> WikiPage | None:
+        for page in self.list_by_workspace(workspace_id):
+            if page.wiki_id == wiki_id:
+                return page
         return None
 
     def get_by_title(self, workspace_id: UUID, title: str) -> WikiPage | None:
-        # 占位：后续实现按标题查询策略。
+        for page in self.list_by_workspace(workspace_id):
+            if page.title == title:
+                return page
         return None
 
     def list_by_workspace(self, workspace_id: UUID) -> list[WikiPage]:
@@ -29,8 +62,33 @@ class FileSystemWikiRepository:
                 "llamaindex.repository.workspace_id": str(workspace_id),
             },
         ):
-            # 占位：后续实现按租户列表查询策略。
-            return []
+            index_payload = self._store.read_json(self._index_file)
+            workspace_raw = index_payload.get(str(workspace_id), [])
+            if not isinstance(workspace_raw, list):
+                return []
+
+            pages: list[WikiPage] = []
+            for item in workspace_raw:
+                if isinstance(item, dict):
+                    pages.append(self._deserialize(item))
+            return pages
+
+    def delete(self, workspace_id: UUID, wiki_id: UUID) -> bool:
+        pages = self.list_by_workspace(workspace_id)
+        remaining = [page for page in pages if page.wiki_id != wiki_id]
+        if len(remaining) == len(pages):
+            return False
+
+        self._save_workspace_pages(workspace_id, remaining)
+        return True
+
+    def count_by_workspace(self, workspace_id: UUID) -> int:
+        return len(self.list_by_workspace(workspace_id))
+
+    def _save_workspace_pages(self, workspace_id: UUID, pages: list[WikiPage]) -> None:
+        index_payload = self._store.read_json(self._index_file)
+        index_payload[str(workspace_id)] = [self._serialize(page) for page in pages]
+        self._store.write_json(self._index_file, index_payload)
 
     @staticmethod
     def _serialize(page: WikiPage) -> dict[str, object]:

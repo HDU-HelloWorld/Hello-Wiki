@@ -3,7 +3,7 @@ from src.domain.wiki.entities import WikiPage
 
 
 class KeywordSearchEngine:
-    def search(self, pages: list[WikiPage], keyword: str, top_k: int) -> list[WikiPage]:
+    async def search(self, pages: list[WikiPage], keyword: str, top_k: int) -> list[WikiPage]:
         with start_observability_span(
             "llamaindex.search_engine",
             "keyword.search",
