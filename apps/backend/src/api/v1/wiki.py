@@ -14,11 +14,12 @@ from pydantic import BaseModel, Field
 
 from src.api.deps import get_workspace_id
 
-
 # ========== Request/Response Schemas ==========
+
 
 class WikiPageCreateRequest(BaseModel):
     """创建 Wiki 页面请求"""
+
     title: str = Field(..., min_length=1, max_length=500, description="页面标题")
     content: str = Field(default="", description="Markdown 内容")
     tags: list[str] = Field(default_factory=list, description="标签列表")
@@ -27,6 +28,7 @@ class WikiPageCreateRequest(BaseModel):
 
 class WikiPageUpdateRequest(BaseModel):
     """更新 Wiki 页面请求"""
+
     title: str | None = Field(None, max_length=500, description="页面标题")
     content: str | None = Field(None, description="Markdown 内容")
     tags: list[str] | None = Field(None, description="标签列表")
@@ -35,6 +37,7 @@ class WikiPageUpdateRequest(BaseModel):
 
 class WikiPageResponse(BaseModel):
     """Wiki 页面响应"""
+
     id: int
     title: str
     content: str
@@ -48,11 +51,13 @@ class WikiPageResponse(BaseModel):
 
 class WikiPageListResponse(BaseModel):
     """Wiki 页面列表响应"""
+
     items: list[WikiPageResponse]
     total: int
 
 
 # ========== 文件存储辅助函数 ==========
+
 
 def get_storage_path(workspace_id: UUID) -> str:
     """获取工作区存储路径"""
@@ -72,7 +77,7 @@ def read_pages(workspace_id: UUID) -> list[dict[str, Any]]:
     index_path = get_index_path(workspace_id)
     if not os.path.exists(index_path):
         return []
-    with open(index_path, "r", encoding="utf-8") as f:
+    with open(index_path, encoding="utf-8") as f:
         data = json.load(f)
         if isinstance(data, list):
             return data
@@ -305,11 +310,13 @@ async def get_tree(
         result: list[dict[str, Any]] = []
         for page in pages_data:
             if page.get("parent_id") == parent_id:
-                result.append({
-                    "id": page["id"],
-                    "title": page["title"],
-                    "children": build_tree(page["id"]),
-                })
+                result.append(
+                    {
+                        "id": page["id"],
+                        "title": page["title"],
+                        "children": build_tree(page["id"]),
+                    }
+                )
         return result
 
     return build_tree(None)
