@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from uuid import UUID
 
 from fastapi import Header, HTTPException, status
@@ -53,6 +55,14 @@ def get_ingest_compile_handler() -> CompileDocumentHandler:
     return CompileDocumentHandler(use_case=use_case)
 
 
+def get_agent_handler() -> AgentHandler:  # noqa: F821  # type: ignore
+    return wiring.build_agent_handler()
+
+
+def get_ingest_pipeline_handler() -> IngestDocumentHandler:  # noqa: F821  # type: ignore
+    return wiring.build_ingest_pipeline_handler()
+
+
 def get_workspace_id(x_workspace_id: str | None = Header(default=None)) -> UUID | None:
     if x_workspace_id is not None:
         parsed = parse_workspace_id(x_workspace_id)
@@ -68,6 +78,16 @@ def get_workspace_id(x_workspace_id: str | None = Header(default=None)) -> UUID 
         return ctx_workspace_id
 
     return None
+
+
+def get_required_workspace_id(x_workspace_id: str | None = Header(default=None)) -> UUID:
+    workspace_id = get_workspace_id(x_workspace_id=x_workspace_id)
+    if workspace_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="workspace_id is required",
+        )
+    return workspace_id
 
 
 def get_execution_context() -> ExecutionContext | None:

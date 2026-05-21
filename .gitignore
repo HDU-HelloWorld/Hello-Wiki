@@ -54,3 +54,15 @@ __pycache__/
 .eggs/
 dist/
 build/
+apps/backend/data/
+apps/backend/.mypy_cache/
+apps/backend/.pytest_cache/
+apps/backend/.ruff_cache/
+apps/backend/.import_linter_cache/
+
+# Claude Code
+.claude/
+
+# IDE
+.vscode/
+.idea/

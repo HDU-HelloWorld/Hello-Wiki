@@ -28,6 +28,11 @@ dependencies = [
     "llama-index-llms-openai>=0.2.0",            # 兼容 DeepSeek/OpenAI 格式
     "llama-index-embeddings-openai>=0.2.0",
     "instructor>=1.3.0",                         # 强约束 LLM 输出 JSON
+    # LangChain — ingest pipeline (document loaders, text splitters, structured output)
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "langchain-text-splitters>=0.3.0",
     "sqlalchemy>=2.0.49",                       # 显式使用 SQLAlchemy API
     # 可观测性 (全链路追踪)
     "opentelemetry-api>=1.41.0,<2.0.0",
@@ -80,6 +85,13 @@ strict = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
 
+[[tool.mypy.overrides]]
+module = [
+    "src.infrastructure.wiring",
+    "src.api.deps",
+]
+disable_error_code = ["name-defined"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
@@ -108,6 +120,18 @@ layers = [
     "src.domain",           # 领域层：业务规则、实体、接口定义
     "src.core",             # 核心层：通用配置、工具函数
 ]
+ignore_imports = [
+    # wiring.py factory functions use lazy imports to wire application-layer
+    # components into infrastructure implementations. Without this exemption,
+    # every wire module would need to live at the topmost layer.
+    "src.infrastructure.wiring -> src.application.init.init_tags",
+    "src.infrastructure.wiring -> src.application.init.handlers",
+    "src.infrastructure.wiring -> src.application.agent.tools.init_tags_tool",
+    "src.infrastructure.wiring -> src.application.agent.agent_loop",
+    "src.infrastructure.wiring -> src.application.agent.handlers",
+    "src.infrastructure.wiring -> src.application.ingest.pipeline",
+    "src.infrastructure.wiring -> src.application.ingest.handlers",
+]
 
 # ---- Contract 2: 应用模块独立性（确保 chat/wiki/ingest 不互依赖） ----
 [[tool.importlinter.contracts]]
@@ -118,6 +142,7 @@ modules = [
     "src.application.wiki",
     "src.application.ingest",
     "src.application.maintenance",
+    "src.application.init",
 ]
 # 注：它们都可以依赖共享的 infrastructure 和 core，但彼此之间不能依赖
 
@@ -148,4 +173,44 @@ forbidden_modules = [
 ignore_imports = [
     # 如果业务逻辑需要特定的导入，可以在这里列出
     # 例："src.domain.chat -> sqlmodel",
+]
+
+# ---- Contract 5: 应用层禁止依赖 API Schema（Request/Response 不得泄露到应用层） ----
+[[tool.importlinter.contracts]]
+name = "Application layer should not depend on API schemas"
+type = "forbidden"
+source_modules = ["src.application"]
+forbidden_modules = [
+    "src.api.schemas",
+]
+
+# ---- Contract 6: 路由层禁止直接依赖领域层（应经由 application/assembler） ----
+[[tool.importlinter.contracts]]
+name = "API v1 routes should not depend on domain"
+type = "forbidden"
+source_modules = ["src.api.v1"]
+forbidden_modules = [
+    "src.domain",
+]
+allow_indirect_imports = true
+
+# ---- Contract 7: Assembler 仅做模型转换，不依赖基础设施实现 ----
+[[tool.importlinter.contracts]]
+name = "API assemblers should not depend on infrastructure"
+type = "forbidden"
+source_modules = ["src.api.assemblers"]
+forbidden_modules = [
+    "src.infrastructure",
+]
+
+# ---- Contract 8: API Schema 保持 HTTP 合约纯净 ----
+[[tool.importlinter.contracts]]
+name = "API schemas should be pure HTTP contracts"
+type = "forbidden"
+source_modules = ["src.api.schemas"]
+forbidden_modules = [
+    "src.application",
+    "src.domain",
+    "src.infrastructure",
+    "src.workers",
 ]

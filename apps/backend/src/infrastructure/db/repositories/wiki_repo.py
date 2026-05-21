@@ -18,7 +18,7 @@ class FileSystemWikiRepository:
             same_id = existing.wiki_id == page.wiki_id
             same_title = existing.title == page.title
             if same_id or same_title:
-                page = WikiPage.create_or_update(
+                page = WikiPage.create_or_update(  # type: ignore[attr-defined]
                     workspace_id=page.workspace_id,
                     title=page.title,
                     category=page.category,

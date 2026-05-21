@@ -1,0 +1,14 @@
+# Tag Generation — Domain Reference Registry
+
+references:
+  - id: general
+    name: General-Purpose Tag Taxonomy
+    description: Default tag generation for mixed-content knowledge bases. Produces a balanced set of category dimensions (document_type, topic, audience, time_sensitivity).
+    prompt: general/prompt.md
+    default: true
+
+  - id: university_policy
+    name: University Policy Tag Taxonomy
+    description: Domain-specific tag generation for higher education administration — examinations, housing, scholarships, academic affairs, campus life, etc.
+    prompt: university_policy/prompt.md
+    default: false

@@ -9,7 +9,7 @@ class UpsertWikiRequest(BaseModel):
     source_doc_id: str | None = None
 
 
-class WikiItem(BaseModel):
+class WikiResponse(BaseModel):
     title: str
     category: str
     summary: str
@@ -17,4 +17,4 @@ class WikiItem(BaseModel):
 
 
 class WikiListResponse(BaseModel):
-    items: list[WikiItem]
+    items: list[WikiResponse]

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Knowledge Extraction Template",
+  "description": "LLM output schema for ingest Step 2. Each field maps to a specific column in schema.sql that requires LLM population.",
+  "type": "object",
+  "required": ["chunk_summary", "page_title", "compiled_truth", "suggested_tags", "effective_range"],
+  "properties": {
+
+    "chunk_summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "2-3 sentence factual summary of this chunk. Maps to raw_chunks.summary — the primary text for semantic vector retrieval (summary_vector). Also shared with page_timeline.source_description."
+    },
+
+    "page_title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Concise descriptive title for the wiki entity page. Maps to pages.title — used for trigram fuzzy search (gin_trgm_ops index). Prefer noun phrases extracted or inferred from the chunk's heading or topic."
+    },
+
+    "compiled_truth": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Synthesized canonical description of what this chunk establishes as knowledge. Maps to pages.compiled_truth — the PRIMARY content for vector search (truth_embedding) and AI question answering. Write as a definitive statement covering who, what, when, conditions, and consequences. Do NOT write 'This document says...' — write the truth directly. 80-300 words."
+    },
+
+    "suggested_tags": {
+      "type": "array",
+      "description": "2-6 hierarchical tags that classify this content. REQUIRED. Maps to tags table (name, label, description columns).",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["name", "label"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "description": "Machine-readable short name. Maps to tags.name. Use lowercase with underscores (e.g. 'makeup_exam_policy')."
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable display name. Maps to tags.label (VARCHAR 256)."
+          },
+          "description": {
+            "type": "string",
+            "description": "One-line explanation of this tag's scope. Maps to tags.description (TEXT)."
+          },
+          "parent_hint": {
+            "type": "string",
+            "description": "Suggested parent tag name for hierarchy construction. Empty or unmatched → created as root-level tag. The persistence layer matches this against existing tag names and sets tags.parent_id accordingly, then computes the ltree path."
+          }
+        }
+      }
+    },
+
+    "effective_range": {
+      "type": "object",
+      "description": "Content timeliness annotation. REQUIRED. Maps to both raw_chunks.effective_range and pages.effective_range (tstzrange). Used for: (1) time-scoped retrieval optimization, (2) defensive staleness warnings when content may be outdated.",
+      "properties": {
+        "start": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Earliest applicable date (ISO 8601 YYYY-MM-DD). null if not mentioned or not applicable."
+        },
+        "end": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Expiration or end-of-validity date. null if indefinite or not applicable."
+        },
+        "description": {
+          "type": "string",
+          "description": "Natural language description of the time range for human review (e.g. '2024-2025学年第一学期')."
+        },
+        "stale_risk": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "unknown"],
+          "description": "LLM assessment of how quickly this content becomes outdated. 'low' = fundamental/stable content. 'medium' = periodically updated procedures. 'high' = frequently changing (annual policies, temporary rules). 'unknown' = insufficient information. Used by retrieval to surface freshness warnings."
+        }
+      }
+    }
+  }
+}

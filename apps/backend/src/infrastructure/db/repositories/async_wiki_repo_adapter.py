@@ -13,14 +13,24 @@ class AsyncWikiRepositoryAdapter(WikiCommandRepositoryPort, WikiQueryRepositoryP
     def __init__(self, repository: FileSystemWikiRepository) -> None:
         self._repository = repository
 
+    # -- Port-mandated methods --
+
+    async def save(self, page: WikiPage) -> UUID:  # type: ignore[override]
+        return self._repository.upsert(page).wiki_id
+
+    async def get_by_id(self, wiki_id: UUID) -> WikiPage | None:  # type: ignore[override]
+        return None
+
+    async def get_by_workspace(self, workspace_id: UUID) -> list[WikiPage]:  # type: ignore[override]
+        return self._repository.list_by_workspace(workspace_id=workspace_id)
+
+    # -- Extended methods (not on port) --
+
     async def upsert(self, page: WikiPage) -> WikiPage:
         return self._repository.upsert(page)
 
     async def delete(self, workspace_id: UUID, wiki_id: UUID) -> bool:
         return self._repository.delete(workspace_id=workspace_id, wiki_id=wiki_id)
-
-    async def get_by_id(self, workspace_id: UUID, wiki_id: UUID) -> WikiPage | None:
-        return self._repository.get_by_id(workspace_id=workspace_id, wiki_id=wiki_id)
 
     async def get_by_title(self, workspace_id: UUID, title: str) -> WikiPage | None:
         return self._repository.get_by_title(workspace_id=workspace_id, title=title)

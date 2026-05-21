@@ -261,3 +261,31 @@ async def run_dedupe_workflow(
         clear_execution_context()
         set_trace_id(None)
         set_workspace_id(None)
+
+
+@broker.task
+async def ingest_document(
+    file_path: str,
+    domain: str = "general",
+    workspace_id: str | None = None,
+    trace_id: str | None = None,
+    context: TaskiqContext = TaskiqDepends(),
+) -> dict[str, object]:
+    task_context = build_task_context(context, workspace_id, trace_id)
+    from src.application.ingest.commands import IngestDocumentCommand
+    from src.infrastructure.wiring import build_ingest_pipeline
+
+    pipeline = build_ingest_pipeline()
+    command = IngestDocumentCommand(
+        workspace_id=str(task_context.workspace_id or ""),
+        file_path=file_path,
+        domain=domain,
+    )
+    result = await pipeline.execute(command)
+    return {
+        "status": "completed" if result["failed"] == 0 else "partial",
+        "total_chunks": result["total_chunks"],
+        "successful": result["successful"],
+        "failed": result["failed"],
+        "task_id": task_context.task_id,
+    }

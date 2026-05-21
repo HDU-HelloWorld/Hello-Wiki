@@ -5,13 +5,13 @@ Wiki 领域实体
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
-from uuid import UUID, uuid4
 from enum import StrEnum
+from uuid import UUID, uuid4
 
 
 class WikiStatus(StrEnum):
     """Wiki 页面状态"""
+
     ACTIVE = "active"
     ARCHIVED = "archived"
     DELETED = "deleted"
@@ -20,6 +20,7 @@ class WikiStatus(StrEnum):
 @dataclass
 class WikiFact:
     """Wiki 事实（结构化知识）"""
+
     key: str
     value: str
     confidence: float = 1.0
@@ -28,6 +29,7 @@ class WikiFact:
 @dataclass
 class WikiParseReference:
     """Wiki 解析引用（来源文档）"""
+
     source_document_id: str
     reference_type: str
 
@@ -47,7 +49,7 @@ class WikiPage:
     parse_references: list[WikiParseReference] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    created_by: Optional[str] = None
+    created_by: str | None = None
 
     def update_content(self, new_content: str) -> None:
         self.content = new_content
@@ -58,8 +60,14 @@ class WikiPage:
         self.updated_at = datetime.now()
 
     @classmethod
-    def create(cls, workspace_id: UUID, title: str, category: str = "general",
-               content: str = "", created_by: Optional[str] = None) -> "WikiPage":
+    def create(
+        cls,
+        workspace_id: UUID,
+        title: str,
+        category: str = "general",
+        content: str = "",
+        created_by: str | None = None,
+    ) -> "WikiPage":
         return cls(
             wiki_id=uuid4(),
             workspace_id=workspace_id,

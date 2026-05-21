@@ -1,8 +1,9 @@
-# 架构隔离配置文档
+# 架构隔离与约束文档
 
 ## 概述
 
 本项目使用 import-linter 作为架构导入检查工具，确保遵循 Clean Architecture + CQRS + DDD 的分层原则，防止层与层之间出现不必要的耦合。
+另外，项目还约定了 API Assembler 与共享 Wiring 的实现边界，用于保持路由层简洁和依赖构建一致性。
 
 ## 当前配置
 
@@ -12,7 +13,7 @@
 
 ## 架构规则
 
-当前定义了 4 个 contract：
+当前定义了 8 个 contract：
 
 1. `Clean Architecture Layers`
    - 用 `layers` 约束分层依赖方向
@@ -26,6 +27,40 @@
 
 4. `Domain layer should not depend on web framework`
    - 防止领域层直接依赖 `fastapi`、`uvicorn`、`sqlmodel`
+
+5. `Application layer should not depend on API schemas`
+   - 防止 `src.application` 直接依赖 `src.api.schemas`
+   - 确保 API Request/Response 模型不泄露到应用层
+
+6. `API v1 routes should not depend on domain`
+   - 约束 `src.api.v1` 不直接导入 `src.domain`
+   - 配置 `allow_indirect_imports = true`，允许经由 application/deps 的合法调用链
+
+7. `API assemblers should not depend on infrastructure`
+   - 保证 assembler 只做模型转换，不引入基础设施实现依赖
+
+8. `API schemas should be pure HTTP contracts`
+   - 约束 `src.api.schemas` 不依赖 `application/domain/infrastructure/workers`
+   - 保持 Request/Response 模型的边界纯净
+
+## 实现约束（非 import-linter）
+
+### API Assembler 约束
+
+- 路由层只做编排，不内联复杂映射。
+- `src/api/assemblers/*` 负责：
+  - Request -> Command/Query
+  - Domain/Application Result -> Response
+
+### 共享 Wiring 约束
+
+- 依赖构建统一放在 `src/infrastructure/wiring.py`。
+- `src/api/deps.py` 与 `src/workers/tasks.py` 必须复用 wiring，禁止重复构建相同依赖链。
+
+### workspace_id 处理约束
+
+- Header 合法性（是否为有效 UUID）由网关统一处理。
+- 业务必填由依赖层 `get_required_workspace_id` 统一处理。
 
 ## 本地运行
 

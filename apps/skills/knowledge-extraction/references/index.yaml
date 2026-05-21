@@ -1,0 +1,16 @@
+# Knowledge Extraction — Domain Reference Registry
+
+references:
+  - id: general
+    name: General-Purpose Extraction
+    description: Default extraction covering common entity types and flexible tag hierarchies. Suitable for mixed-content knowledge bases.
+    template: general/template.json
+    prompt: general/prompt.md
+    default: true
+
+  - id: university_policy
+    name: University Policy Extraction
+    description: Domain-specific extraction for higher education administrative documents — examinations, housing, scholarships, discipline, academic affairs.
+    template: university_policy/template.json
+    prompt: university_policy/prompt.md
+    default: false

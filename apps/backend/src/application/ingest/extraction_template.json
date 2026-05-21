@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LLM Knowledge Extraction Template",
+  "description": "Returned by the LLM for each text chunk during ingest Step 2. Maps to raw_chunks, pages, and tags tables.",
+  "type": "object",
+  "required": ["chunk_summary", "page_title", "compiled_truth"],
+  "properties": {
+
+    "chunk_summary": {
+      "type": "string",
+      "description": "2-3 sentence summary of this specific chunk's content. Maps to raw_chunks.summary and shared with page_timeline.source_description.",
+      "minLength": 1,
+      "example": "本文件规定了缓考申请的流程：学生需在考试前48小时提交申请表，经辅导员和教务处双重审批后方可缓考。"
+    },
+
+    "page_title": {
+      "type": "string",
+      "description": "Concise, descriptive title for the wiki page entity. Maps to pages.title.",
+      "minLength": 1,
+      "example": "缓考申请流程"
+    },
+
+    "compiled_truth": {
+      "type": "string",
+      "description": "Synthesized factual description of what this chunk establishes as knowledge. This is the canonical content used for vector search and question answering. Maps to pages.compiled_truth.",
+      "minLength": 1,
+      "example": "缓考申请的完整流程包括：1. 学生填写缓考申请表；2. 辅导员审批（1个工作日内）；3. 教务处终审（3个工作日内）；4. 缓考安排通知。逾期未提交申请不予受理。"
+    },
+
+    "suggested_tags": {
+      "type": "array",
+      "description": "Hierarchical tags inferred from content. Each item describes one level in a tag path. Maps to tags.name, tags.label, tags.description. The persistence layer handles parent-child linking and ltree path computation.",
+      "items": {
+        "type": "object",
+        "required": ["name", "label"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Machine-readable short name, lowercase with underscores. Maps to tags.name.",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "example": "makeup_exam_policy"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable display name. Maps to tags.label.",
+            "example": "缓考政策"
+          },
+          "description": {
+            "type": "string",
+            "description": "One-line explanation of this tag's scope. Maps to tags.description.",
+            "example": "与缓考申请、审批、安排相关的政策规定"
+          },
+          "parent_hint": {
+            "type": "string",
+            "description": "Suggested parent tag name. If left empty or unmatched, the tag is created as a root-level tag. Used by the persistence layer for tag tree insertion.",
+            "example": "examinations"
+          }
+        }
+      }
+    },
+
+    "entities": {
+      "type": "array",
+      "description": "Named entities extracted from the chunk. Used to enrich compiled_truth and may be stored in raw_chunks.extra_metadata.",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Entity name as it appears in the text.",
+            "example": "缓考申请表"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["policy", "regulation", "event", "person", "organization", "term", "date_range", "procedure", "document", "other"],
+            "description": "Entity category for filtering and faceted search."
+          },
+          "description": {
+            "type": "string",
+            "description": "Concise description of this entity in context.",
+            "example": "缓考申请的必需表单，需包含学生信息、课程信息、缓考原因和证明材料"
+          },
+          "attributes": {
+            "type": "object",
+            "description": "Optional structured properties specific to this entity type. For example, a 'procedure' entity may have 'steps', a 'date_range' may have 'start'/'end'.",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+
+    "temporal": {
+      "type": "object",
+      "description": "Temporal validity extracted from the chunk content. Maps to raw_chunks.effective_range and pages.effective_range (as tstzrange).",
+      "properties": {
+        "start": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Earliest effective date mentioned (ISO 8601 YYYY-MM-DD). null if not applicable.",
+          "example": "2024-09-01"
+        },
+        "end": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Latest effective date or expiration (ISO 8601 YYYY-MM-DD). null if indefinite or not applicable.",
+          "example": "2025-08-31"
+        },
+        "description": {
+          "type": "string",
+          "description": "Natural language description of the time range for human review.",
+          "example": "2024-2025学年第一学期"
+        }
+      }
+    },
+
+    "open_threads": {
+      "type": "array",
+      "description": "Unresolved questions, ambiguities, or conflicts identified in this chunk. Maps to pages.open_threads (JSONB).",
+      "items": {
+        "type": "string",
+        "description": "A specific question or issue that needs further resolution.",
+        "example": "待确认：2025版学生手册中缓考截止时间与此处规定不一致（48小时 vs 24小时）"
+      }
+    },
+
+    "see_also_hints": {
+      "type": "array",
+      "description": "Topic keywords or phrases that suggest cross-references to other pages. The persistence layer resolves these to page UUIDs via semantic search. Maps to pages.see_also (UUID[]).",
+      "items": {
+        "type": "string",
+        "description": "A topic keyword or short phrase.",
+        "example": "补考政策"
+      }
+    },
+
+    "confidence": {
+      "type": "object",
+      "description": "LLM self-assessment of extraction quality. Used for downstream filtering and human review prioritization.",
+      "properties": {
+        "summary": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence in chunk_summary accuracy."
+        },
+        "compiled_truth": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence in compiled_truth accuracy and completeness."
+        },
+        "tags": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence in suggested tag relevance."
+        },
+        "temporal": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence in temporal range extraction accuracy."
+        },
+        "overall": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Aggregate confidence score. Chunks with overall < 0.5 should be flagged for human review."
+        }
+      }
+    }
+  }
+}
