@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from src.api.routes.wiki import router; print\\('Wiki import successful'\\)\")",
+      "Bash(python -c \"from src.api.routes.versions import router; print\\('Versions import successful'\\)\")",
+      "Bash(python -c \"from src.api.routes.tags import router; print\\('Tags import successful'\\)\")"
+    ]
+  }
+}

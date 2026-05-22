@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(set HELLO_WIKI_DATABASE_URL=sqlite:///hello_wiki.db)",
+      "Bash(python -c \"from src.api.routes.wiki import router; print\\('Import successful'\\)\")"
+    ]
+  }
+}
