@@ -48,7 +48,11 @@ def test_create_app_wires_gateway_router_and_observability(monkeypatch):
     assert calls[1][1] is fake_app
     assert calls[2][0] == "observability"
     assert calls[2][1] == (fake_app, "api")
-    assert "/health" in {route.path for route in app.routes}
+    route_paths = {route.path for route in app.routes}
+    assert "/health" in route_paths
+    assert "/api/v1/agent/chat" in route_paths
+    assert "/api/v1/ingest/upload" in route_paths
+    assert "/api/v1/init/tags" in route_paths
 
 
 def test_lifespan_starts_and_stops_broker_when_not_worker(monkeypatch):

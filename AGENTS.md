@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+## Python / TypeScript boundary (primary rule)
+
+- **Python (`apps/backend`)**: Wiki-facing HTTP APIs and **database** APIs (PostgreSQL, ingest orchestration, retrieve catalog/search). No in-process LLM for product logic—delegate to the TS gateway over HTTP.
+- **TypeScript (`packages/agent-ai`)**: **All LLM calls** and **context/session management** (agent JSONL, retriever traces, extract, init-tags, Retriever loops).
+
+Full detail: `docs/dev.md` (section 职责边界).
+
 ## Backend development
 
 Any change under `apps/backend` **must** strictly follow these documents end to end (requirements, not background reading):

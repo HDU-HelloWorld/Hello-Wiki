@@ -1,9 +1,16 @@
 {
   "name": "hello-wiki",
   "private": true,
+  "engines": {
+    "node": ">=22.19.0",
+    "pnpm": ">=10"
+  },
   "scripts": {
     "dev": "pnpm --parallel --filter web --filter backend dev",
     "build": "pnpm --filter web build",
+    "check:agent-ai": "pnpm --filter agent-ai check",
+    "check:backend": "cd apps/backend && mypy src",
+    "serve:agent-ai": "pnpm --filter agent-ai serve",
     "start": "pnpm --filter web start",
     "lint": "pnpm --filter web lint"
   }

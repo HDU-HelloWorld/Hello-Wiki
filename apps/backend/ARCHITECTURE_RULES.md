@@ -20,7 +20,7 @@
    - 当前顺序：`src.api` -> `src.workers` -> `src.application` -> `src.infrastructure` -> `src.domain` -> `src.core`
 
 2. `Application modules should be independent`
-   - 确保 `src.application.chat`、`src.application.wiki`、`src.application.ingest`、`src.application.maintenance` 彼此独立
+   - 确保 `src.application.wiki`、`src.application.ingest`、`src.application.maintenance` 等应用子模块彼此独立
 
 3. `Core layer should not import upper layers`
    - 保持 `src.core` 纯净，不反向依赖上层模块

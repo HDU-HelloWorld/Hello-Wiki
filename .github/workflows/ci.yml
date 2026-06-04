@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22.19.0"
           cache: pnpm
 
       - name: Install dependencies
@@ -35,6 +35,9 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Agent AI Package Check
+        run: pnpm check:agent-ai
 
   backend-check:
     runs-on: ubuntu-latest

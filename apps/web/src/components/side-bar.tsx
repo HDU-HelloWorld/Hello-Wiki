@@ -65,17 +65,6 @@ function KnowledgeBaseIcon() {
   );
 }
 
-function CompileIcon() {
-  return (
-    <svg {...iconSvgProps()}>
-      <path d="M7 3h10l-1 14H8L7 3z" />
-      <path d="M7 8h10" />
-      <circle cx="17" cy="6" r="3" />
-      <path d="M17 4.5v3M15.5 6h3" />
-    </svg>
-  );
-}
-
 function ChatIcon() {
   return (
     <svg {...iconSvgProps()}>
@@ -169,7 +158,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/home", label: "工作台", icon: <WorkbenchIcon /> },
       { href: "/knowledge", label: "知识库", icon: <KnowledgeBaseIcon /> },
-      { href: "/compile", label: "知识编译", icon: <CompileIcon /> },
       { href: "/chat", label: "智能对话", icon: <ChatIcon /> },
       { href: "/wiki", label: "Wiki 浏览", icon: <WikiBrowseIcon /> },
     ],

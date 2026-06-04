@@ -46,6 +46,11 @@ next-env.d.ts
 .trae
 openspec/
 
+# runtime data (logs, uploads, workspaces, agent sessions)
+/data/
+apps/backend/data/
+packages/agent-ai/data/
+
 # python (apps/backend)
 .venv/
 __pycache__/
@@ -53,4 +58,16 @@ __pycache__/
 *.egg-info/
 .eggs/
 dist/
+packages/agent-ai/dist/
 build/
+apps/backend/.mypy_cache/
+apps/backend/.pytest_cache/
+apps/backend/.ruff_cache/
+apps/backend/.import_linter_cache/
+
+# Claude Code
+.claude/
+
+# IDE
+.vscode/
+.idea/

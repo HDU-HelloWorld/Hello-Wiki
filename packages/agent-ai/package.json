@@ -1,0 +1,26 @@
+{
+  "name": "agent-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "ingest-ai": "./dist/src/ingest/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "serve": "node ./dist/src/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm build && node --test \"dist/tests/**/*.test.js\"",
+    "check": "pnpm typecheck && pnpm test"
+  },
+  "dependencies": {
+    "@earendil-works/pi-agent-core": "^0.75.5",
+    "@earendil-works/pi-ai": "^0.75.5",
+    "dotenv": "^17.4.2",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "typescript": "^5.9.3"
+  }
+}

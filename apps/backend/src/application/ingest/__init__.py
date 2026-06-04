@@ -1,7 +1,5 @@
-from src.application.ingest.commands import CompileDocumentCommand
-from src.application.ingest.handlers import CompileDocumentHandler
+from src.application.ingest.commands import IngestDocumentCommand
 
 __all__ = [
-    "CompileDocumentCommand",
-    "CompileDocumentHandler",
+    "IngestDocumentCommand",
 ]

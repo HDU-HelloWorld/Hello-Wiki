@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "University Policy Extraction Template",
+  "description": "Domain-specific LLM output schema for higher education administrative documents.",
+  "type": "object",
+  "required": ["chunk_summary", "page_title", "compiled_truth", "suggested_tags", "effective_range"],
+  "properties": {
+
+    "chunk_summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "2-3 sentence factual summary. Maps to raw_chunks.summary."
+    },
+
+    "page_title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Concise title. Maps to pages.title."
+    },
+
+    "compiled_truth": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Canonical synthesis. Maps to pages.compiled_truth — primary content for vector search and QA."
+    },
+
+    "suggested_tags": {
+      "type": "array",
+      "description": "2-6 leaf tags selected from the available tag hierarchy. REQUIRED. Maps to tags table and page_tags junction.",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["name", "label"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "description": "Leaf tag name. Maps to tags.name."
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable display name. Maps to tags.label."
+          },
+          "description": {
+            "type": "string",
+            "description": "One-line explanation. Maps to tags.description."
+          },
+          "parent_hint": {
+            "type": "string",
+            "description": "ltree path prefix to the parent (e.g., 'document_type', 'functional_area.examinations'). Maps to ltree path: parent_hint.name."
+          }
+        }
+      }
+    },
+
+    "effective_range": {
+      "type": "object",
+      "description": "Content timeliness annotation. Maps to raw_chunks.effective_range and pages.effective_range (tstzrange).",
+      "properties": {
+        "start": {
+          "type": ["string", "null"], "format": "date",
+          "description": "Earliest applicable date (ISO 8601). null if not mentioned."
+        },
+        "end": {
+          "type": ["string", "null"], "format": "date",
+          "description": "Expiration date. null if indefinite."
+        },
+        "description": {
+          "type": "string",
+          "description": "Natural language description (e.g., '2024-2025学年第一学期')."
+        },
+        "academic_year": {
+          "type": ["string", "null"],
+          "pattern": "^\\d{4}-\\d{4}$",
+          "description": "Academic year in YYYY-YYYY format if applicable."
+        },
+        "semester": {
+          "type": ["string", "null"],
+          "enum": ["spring", "summer", "fall", "winter", null],
+          "description": "Semester if semester-specific."
+        },
+        "stale_risk": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "unknown"],
+          "description": "Staleness risk. low = stable/fundamental, medium = periodically updated, high = frequently changing."
+        }
+      }
+    }
+  }
+}

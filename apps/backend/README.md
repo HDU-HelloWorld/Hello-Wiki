@@ -2,6 +2,17 @@
 
 **框架交付版本**：清洁架构 + CQRS + DDD 多层隔离框架，配套完整测试与可观测性基础设施。
 
+## 职责边界（与 TS 分工）
+
+本服务（Python）负责：
+
+- **Wiki 展示 API** — `api/v1/wiki` 文件 Wiki 的 CRUD/树/统计。
+- **数据库 API** — Ingest 落库、标签/知识域、`retrieve` catalog 与 RRF search、embedding 回填等。
+
+**不在此实现**：任何 LLM 业务推理。提取、标签树、Agent/Retriever 对话由 `packages/agent-ai`（`:8766`）完成；本仓库通过 `AGENT_AI_BASE_URL` / `INGEST_AI_BASE_URL` 转发。
+
+主规范全文：仓库根目录 [`docs/dev.md`](../../docs/dev.md#职责边界主规范)。
+
 ## 开发指南与约束
 
 请优先阅读并遵守统一规范文档：
@@ -15,12 +26,21 @@
 ### 1. 环境准备
 
 ```bash
+# Node.js >=22.19.0（用于 packages/agent-ai 统一 LLM 网关）
+node --version
+
 # Python 3.11+ 虚拟环境
 python3.11 -m venv .venv
 source .venv/bin/activate
 
 # 安装依赖
 pip install -e ".[dev]"
+
+# 构建 TS Agent 与 ingest 模型网关
+cd ../..
+pnpm install
+pnpm --filter agent-ai build
+cd apps/backend
 ```
 
 如果你在当前目录下运行脚本，请先把当前目录加进 Python 导入路径。
@@ -40,6 +60,9 @@ export PYTHONPATH="$PWD"
 ### 2. 启动应用
 
 ```bash
+# 启动统一 TS LLM 网关（默认 http://127.0.0.1:8766）
+pnpm --filter agent-ai serve
+
 # 启动 API 服务（localhost:8000）
 python run.py
 
@@ -49,6 +72,45 @@ python worker.py
 # MVP 阶段统一默认租户启动（自动注入 X-Workspace-ID）
 PYTHONPATH="$PWD" python scripts/mvp.py
 ```
+
+Python 侧通过 `AGENT_AI_BASE_URL` 连接 TS Agent 服务，默认值为 `http://127.0.0.1:8766`。
+Python 侧通过 `INGEST_AI_BASE_URL` 连接同一 TS 服务的 ingest 路由（`/extract`、`/init-tags`），默认值为 `http://127.0.0.1:8766`。
+
+已有数据需要补全向量时，可在 `apps/backend` 目录执行（MVP 检索依赖 `pages.truth_embedding`；`summary_vector` 仅占位）：
+
+```bash
+python scripts/backfill_embeddings.py
+```
+
+### Retrieve API（供 agent-ai 多轮检索）
+
+MVP 知识表带 `workspace_id` + `domain_id` 分区。开发库无历史数据时，请用更新后的 `src/schema.sql` **重建数据库**（本变更不提供迁移脚本）。
+
+- `GET /api/v1/retrieve/domains` — 列出当前 workspace 可检索 domain
+- `GET /api/v1/retrieve/domains/{domain}/tag-tree` — 该 domain 的标签树（path 为 `foo.bar`，不含 domain 前缀）
+- `POST /api/v1/retrieve/search` — 混合检索（body 必填 `domain`）
+
+请求头 `X-Workspace-ID`（UUID）必填。默认 MVP 租户：`00000000-0000-0000-0000-000000000001`。
+
+```json
+{
+  "domain": "general",
+  "query": {
+    "sanitize_query_for_prompt": "2025年商城用户投诉量排名前三的问题分别是什么？",
+    "target_tags": ["functional_area.registration"],
+    "time_range": null
+  },
+  "top_k": 10,
+  "exclude_page_ids": ["00000000-0000-0000-0000-000000000001"]
+}
+```
+
+Search 响应 hit **不含** `original_text`。
+
+- **语义路（MVP）**：仅 `pages.truth_embedding` 与查询向量相似度；`raw_chunks.summary_vector` 不参与 RRF。
+- **其他路**：tag 匹配、BM25 全文、时间范围（未传 `time_range` 时跳过时间路）。
+- **`exclude_page_ids`**：多轮 retrieve 时传入已见 page，Py 在 RRF 排序后过滤再取 `top_k`。
+- **`degraded`**：能力未完整参与时的标签，例如 `semantic_disabled_no_embeddings`、`time_channel_skipped`（非 HTTP 错误）。
 
 ### 3. 健康检查
 
@@ -239,6 +301,8 @@ export LOG_TO_FILE=true
 export LOG_FILE_PATH=./data/logs/backend.log
 ```
 
+从 `apps/backend` 目录启动（`python run.py` 或 `uvicorn`），日志才会写到 `apps/backend/data/logs/backend.log`。Retriever 编排跑在 **agent-ai (:8766)**；只有 catalog/search 的 HTTP 会打到 Python。检索 E2E 时若未启动 :8000 或工作目录不对，`backend.log` 不会更新。检索路由会打 `retrieve.domains` / `retrieve.tag_tree` / `retrieve.search` 行；完整 Retriever 轮次见 agent-ai 的 `AGENT_AI_RETRIEVE_DEBUG` → `packages/agent-ai/data/logs/retrieve.log`。
+
 ### 2. 启动本地可观测性栈
 
 ```bash
@@ -267,6 +331,12 @@ export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:6006/v1/traces
 ```bash
 curl http://localhost:8000/api/v1/workspace/context \
   -H "X-Workspace-ID: 00000000-0000-0000-0000-000000000001"
+
+# 上传文档进入 ingest pipeline
+curl -X POST http://localhost:8000/api/v1/ingest/upload \
+  -H "X-Workspace-ID: 00000000-0000-0000-0000-000000000001" \
+  -F "file=@policy.txt" \
+  -F "domain=general"
 ```
 
 **框架层实现**：

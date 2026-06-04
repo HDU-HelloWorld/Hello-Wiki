@@ -1,13 +1,10 @@
-from src.application.ingest.commands import CompileDocumentCommand
-from src.application.ingest.compile_workflow import IngestCompilerUseCase
-from src.domain.wiki.entities import WikiPage
+from src.application.ingest.commands import IngestDocumentCommand
+from src.application.ingest.pipeline import IngestPipelineUseCase
 
 
-class CompileDocumentHandler:
-    """Ingest 写路径应用服务（Command Handler）。"""
-
-    def __init__(self, use_case: IngestCompilerUseCase) -> None:
+class IngestDocumentHandler:
+    def __init__(self, use_case: IngestPipelineUseCase) -> None:
         self._use_case = use_case
 
-    async def handle(self, command: CompileDocumentCommand) -> WikiPage:
+    async def handle(self, command: IngestDocumentCommand) -> dict[str, object]:
         return await self._use_case.execute(command)

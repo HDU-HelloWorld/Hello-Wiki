@@ -6,8 +6,8 @@ import pytest
 from fastapi import HTTPException
 
 from src.api import deps
-from src.application.chat.handlers import AskChatHandler, StreamChatHandler
-from src.application.ingest.handlers import CompileDocumentHandler
+from src.application.agent.handlers import AgentHandler
+from src.application.init.handlers import InitTagsHandler
 from src.application.wiki.handlers import ListWikiHandler, SearchWikiHandler, UpsertWikiHandler
 from src.core.context import (
     ExecutionContext,
@@ -15,7 +15,6 @@ from src.core.context import (
     set_execution_context,
     set_workspace_id,
 )
-from src.infrastructure.db.repositories.async_wiki_repo_adapter import AsyncWikiRepositoryAdapter
 
 
 def test_get_wiki_command_handler_returns_handler_instance():
@@ -33,22 +32,14 @@ def test_get_wiki_search_handler_returns_handler_instance():
     assert isinstance(handler, SearchWikiHandler)
 
 
-def test_get_chat_ask_handler_returns_handler_instance():
-    handler = deps.get_chat_ask_handler()
-    assert isinstance(handler, AskChatHandler)
-    assert isinstance(handler._executor._repository, AsyncWikiRepositoryAdapter)  # noqa: SLF001
+def test_get_agent_handler_returns_handler_instance():
+    handler = deps.get_agent_handler()
+    assert isinstance(handler, AgentHandler)
 
 
-def test_get_chat_stream_handler_returns_handler_instance():
-    handler = deps.get_chat_stream_handler()
-    assert isinstance(handler, StreamChatHandler)
-    assert isinstance(handler._executor._repository, AsyncWikiRepositoryAdapter)  # noqa: SLF001
-
-
-def test_get_ingest_compile_handler_returns_handler_instance():
-    handler = deps.get_ingest_compile_handler()
-    assert isinstance(handler, CompileDocumentHandler)
-    assert isinstance(handler._use_case._repository, AsyncWikiRepositoryAdapter)  # noqa: SLF001
+def test_get_init_tags_handler_returns_handler_instance():
+    handler = deps.get_init_tags_handler()
+    assert isinstance(handler, InitTagsHandler)
 
 
 def test_get_workspace_id_prefers_header_value():

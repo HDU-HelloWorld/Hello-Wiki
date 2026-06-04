@@ -1,0 +1,18 @@
+# Built-in operational prompts for agent-ai (not user-customizable skills).
+# User/domain prompts live under apps/skills/ and are loaded via ingest/skill-loader.ts.
+
+prompts:
+  - id: agent.main
+    system: agent/main.system.md
+
+  - id: retriever.main
+    system: retrieve/retriever.main.md
+
+  - id: retriever.user_initial
+    user: retrieve/user-initial.md
+
+  - id: retriever.user_tag_tree
+    user: retrieve/user-tag-tree.md
+
+  - id: retriever.user_round
+    user: retrieve/user-round.md

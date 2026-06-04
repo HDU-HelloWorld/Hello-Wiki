@@ -30,6 +30,21 @@ class Settings(BaseSettings):
     # LLM 配置 (DeepSeek 默认)
     LLM_API_KEY: str | None = None
     LLM_BASE_URL: str = "https://api.deepseek.com/v1"
+    LLM_MODEL_NAME: str = "deepseek-chat"
+    LLM_TEMPERATURE: float = 0.0
+    LLM_MAX_TOKENS: int = 4096
+    LLM_MOCK_ENABLED: bool = False
+
+    # Embedding configuration (OpenAI-compatible API)
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+
+    # TypeScript ingest extraction gateway
+    INGEST_AI_BASE_URL: str = "http://127.0.0.1:8766"
+    INGEST_AI_TIMEOUT_SECONDS: float = 120.0
+
+    # TypeScript agent loop gateway
+    AGENT_AI_BASE_URL: str = "http://127.0.0.1:8766"
+    AGENT_AI_TIMEOUT_SECONDS: float = 120.0
 
     # 存储路径
     STORAGE_BASE_PATH: str = "./data"
