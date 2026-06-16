@@ -216,9 +216,7 @@ async def ingest_status(task_id: str) -> IngestStatusResponse:
             if document.get("compile_task_id") == task_id:
                 info["document_id"] = document_id
                 workspace_value = document.get("workspace_id")
-                info["workspace_id"] = (
-                    str(workspace_value) if workspace_value is not None else None
-                )
+                info["workspace_id"] = str(workspace_value) if workspace_value is not None else None
                 break
 
     result_document_id = info.get("document_id")
