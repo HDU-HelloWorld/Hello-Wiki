@@ -7,15 +7,23 @@ from pathlib import Path
 
 import pytest
 
-BACKEND_ROOT = Path(__file__).resolve().parents[1]
-SHARED_ROOT = BACKEND_ROOT.parents[1] / "packages" / "py-worker-core" / "src"
+WORKER_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = WORKER_ROOT.parents[1]
+SHARED_ROOT = REPO_ROOT / "packages" / "py-worker-core" / "src"
+BACKEND_ROOT = REPO_ROOT / "apps" / "backend"
 
 sys.path.insert(0, str(SHARED_ROOT))
 sys.path.insert(0, str(BACKEND_ROOT))
+sys.path.insert(0, str(WORKER_ROOT / "src"))
 
-# ruff: noqa: E402
 from src.core import logging as logging_module
-from tests.helpers import reset_runtime_context
+from src.core.context import clear_execution_context, set_trace_id, set_workspace_id
+
+
+def reset_runtime_context() -> None:
+    clear_execution_context()
+    set_trace_id(None)
+    set_workspace_id(None)
 
 
 @pytest.fixture(autouse=True)

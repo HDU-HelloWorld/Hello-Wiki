@@ -40,9 +40,8 @@ python run.py
 Worker：
 
 ```bash
-cd apps/backend
-export PYTHONPATH="$PWD"
-python worker.py
+cd apps/worker
+uv run python worker.py
 ```
 
 ### 1.3 常用验证命令
@@ -71,14 +70,14 @@ lint-imports
 
 - 后端根目录固定为：`apps/backend`。
 - 允许的额外目录层只有 `src`。
-- 功能目录应直接落在 `src` 下（例如：`api`、`application`、`domain`、`infrastructure`、`workers`、`core`）。
+- backend 自有目录直接落在 `src` 下；共享业务层位于 `packages/py-worker-core/src/src`。
 - 禁止新增无价值的包装目录（例如 `src/app/...`、`src/hello_wiki_backend/...`）。
 
 ### 2.2 Clean Architecture 分层依赖
 
 依赖方向必须单向且可被 `lint-imports` 验证：
 
-- `api` / `workers`（入口层）
+- `api`（backend 入口层）
 - `application`（用例编排层）
 - `infrastructure`（实现层）
 - `domain`（业务规则与协议层）
@@ -91,7 +90,7 @@ lint-imports
 - `application` 禁止依赖 `src.api.schemas`（Request/Response 不得泄露到应用层）。
 - `api.v1` 禁止直接依赖 `src.domain`（通过 application/assembler 间接调用）。
 - `api.assemblers` 禁止依赖 `src.infrastructure`。
-- `api.schemas` 禁止依赖 `application/domain/infrastructure/workers`。
+- `api.schemas` 禁止依赖 `application/domain/infrastructure`。
 
 ## 3. CQRS 与骨架阶段实现约束
 
@@ -134,7 +133,7 @@ lint-imports
 
 ### 4.2 禁止重复构建逻辑
 
-- `src/api/deps.py` 与 `src/workers/tasks.py` 不得重复 new 相同依赖链。
+- `src/api/deps.py` 与 `apps/worker/src/hello_wiki_worker/tasks.py` 不得重复 new 相同依赖链。
 - 依赖构建应优先调用 wiring 中的共享函数。
 
 ### 4.3 可测试性要求

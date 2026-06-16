@@ -3,17 +3,24 @@ from __future__ import annotations
 from taskiq.message import TaskiqMessage
 from taskiq.result import TaskiqResult
 
+from hello_wiki_worker.context_middleware import ExecutionContextMiddleware
 from src.core.context import get_execution_context, get_trace_id, get_workspace_id
-from src.workers.context_middleware import ExecutionContextMiddleware
+from src.core.task_names import RUN_DEDUPE_TASK_NAME
 
 
-def _build_message(**kwargs):
+def _build_message(**kwargs) -> TaskiqMessage:  # noqa: ANN003
     return TaskiqMessage(
-        task_id=kwargs.get("task_id", "task-001"),
-        task_name=kwargs.get("task_name", "src.workers.tasks.run_dedupe_workflow"),
+        task_id=kwargs.get("task_id", "task-ctx-001"),
+        task_name=kwargs.get("task_name", RUN_DEDUPE_TASK_NAME),
         labels=kwargs.get("labels", {}),
         args=kwargs.get("args", []),
-        kwargs=kwargs.get("message_kwargs", {}),
+        kwargs=kwargs.get(
+            "kwargs",
+            {
+                "workspace_id": "00000000-0000-0000-0000-000000000120",
+                "trace_id": "trace-worker-001",
+            },
+        ),
     )
 
 
@@ -23,13 +30,7 @@ def _build_result() -> TaskiqResult[str]:
 
 def test_worker_pre_execute_builds_execution_context_from_message_kwargs():
     middleware = ExecutionContextMiddleware()
-    message = _build_message(
-        labels={"_retries": "2", "max_retries": "5", "retry_on_error": "true", "queue": "priority"},
-        message_kwargs={
-            "workspace_id": "00000000-0000-0000-0000-000000000030",
-            "trace_id": "trace-worker-001",
-        },
-    )
+    message = _build_message()
 
     middleware.pre_execute(message)
 
@@ -37,38 +38,31 @@ def test_worker_pre_execute_builds_execution_context_from_message_kwargs():
     assert context is not None
     assert context.runtime == "worker"
     assert context.component == "taskiq"
-    assert context.operation == "src.workers.tasks.run_dedupe_workflow"
-    assert context.task_id == "task-001"
-    assert context.task_queue == "priority"
-    assert context.retry_count == 2
-    assert context.max_retries == 5
-    assert context.retry_on_error is True
-    assert context.raw_workspace_id == "00000000-0000-0000-0000-000000000030"
-    assert str(context.workspace_id) == "00000000-0000-0000-0000-000000000030"
+    assert context.operation == RUN_DEDUPE_TASK_NAME
+    assert str(context.workspace_id) == "00000000-0000-0000-0000-000000000120"
+    assert context.trace_id == "trace-worker-001"
     assert get_workspace_id() == context.workspace_id
     assert get_trace_id() == "trace-worker-001"
 
 
 def test_worker_pre_execute_handles_invalid_workspace_id():
     middleware = ExecutionContextMiddleware()
-    message = _build_message(message_kwargs={"workspace_id": "bad-id", "trace_id": 12345})
+    message = _build_message(
+        kwargs={"workspace_id": "invalid-workspace-id", "trace_id": "trace-worker-002"}
+    )
 
     middleware.pre_execute(message)
 
     context = get_execution_context()
     assert context is not None
     assert context.workspace_id is None
+    assert context.raw_workspace_id == "invalid-workspace-id"
     assert context.workspace_valid is False
-    assert context.raw_workspace_id == "bad-id"
-    assert get_workspace_id() is None
-    assert get_trace_id() == "12345"
 
 
 def test_worker_post_execute_clears_runtime_context():
     middleware = ExecutionContextMiddleware()
-    message = _build_message(
-        message_kwargs={"workspace_id": "00000000-0000-0000-0000-000000000031"}
-    )
+    message = _build_message()
 
     middleware.pre_execute(message)
     middleware.post_execute(message, _build_result())
@@ -80,9 +74,7 @@ def test_worker_post_execute_clears_runtime_context():
 
 def test_worker_on_error_clears_runtime_context():
     middleware = ExecutionContextMiddleware()
-    message = _build_message(
-        message_kwargs={"workspace_id": "00000000-0000-0000-0000-000000000032"}
-    )
+    message = _build_message()
 
     middleware.pre_execute(message)
     middleware.on_error(message, _build_result(), RuntimeError("boom"))

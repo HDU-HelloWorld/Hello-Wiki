@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src.workers.broker import broker
-from src.workers.context_middleware import ExecutionContextMiddleware
+from hello_wiki_worker.broker import broker
+from hello_wiki_worker.context_middleware import ExecutionContextMiddleware
 
 
 def test_worker_broker_uses_redis_backends():

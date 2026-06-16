@@ -1,9 +1,9 @@
-from typing import TypedDict
+from typing import TypedDict, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 
-from src.api.deps import get_ingest_pipeline_handler, get_required_workspace_id
+from src.api.deps import get_required_workspace_id
 from src.api.schemas.ingest import (
     CompileDocumentJobResponse,
     IngestDocumentItem,
@@ -11,8 +11,7 @@ from src.api.schemas.ingest import (
     IngestStatusResponse,
     IngestUploadResponse,
 )
-from src.application.ingest.commands import IngestDocumentCommand
-from src.application.ingest.handlers import IngestDocumentHandler
+from src.api.task_queue import enqueue_compile_document, fetch_task_status
 from src.core.config import settings
 from src.domain.ingest.constants import SUPPORTED_INGEST_EXTENSIONS
 
@@ -31,17 +30,6 @@ class DocumentRecord(TypedDict, total=False):
     stored_path: str
 
 
-class TaskRecord(TypedDict, total=False):
-    status: str
-    total_chunks: int
-    successful: int
-    failed: int
-    error: str | None
-    document_id: str
-    errors: list[dict[str, object]]
-
-
-TASK_STATUS: dict[str, TaskRecord] = {}
 DOCUMENTS: dict[str, DocumentRecord] = {}
 
 
@@ -77,8 +65,14 @@ def _document_item(document_id: str) -> IngestDocumentItem:
     )
 
 
-def _sync_document_from_task(document_id: str, task_id: str) -> None:
-    task = TASK_STATUS.get(task_id)
+def _coerce_optional_str(value: object) -> str | None:
+    if value is None:
+        return None
+    return str(value)
+
+
+async def _sync_document_from_task(document_id: str, task_id: str) -> None:
+    task = await fetch_task_status(task_id)
     document = DOCUMENTS.get(document_id)
     if task is None or document is None:
         return
@@ -95,10 +89,10 @@ def _sync_document_from_task(document_id: str, task_id: str) -> None:
     elif task_status == "partial":
         document["status"] = "partial"
         document["wiki_pages"] = _coerce_int(task.get("successful"), 0)
-        document["error"] = task.get("error")
+        document["error"] = _coerce_optional_str(task.get("error"))
     elif task_status == "failed":
         document["status"] = "failed"
-        document["error"] = task.get("error")
+        document["error"] = _coerce_optional_str(task.get("error"))
     else:
         document["status"] = task_status
 
@@ -115,7 +109,7 @@ async def list_documents(
             continue
         compile_task_id = info.get("compile_task_id")
         if isinstance(compile_task_id, str):
-            _sync_document_from_task(document_id, compile_task_id)
+            await _sync_document_from_task(document_id, compile_task_id)
         if status and info.get("status") != status:
             continue
         items.append(_document_item(document_id))
@@ -177,11 +171,7 @@ async def ingest_upload(
 async def compile_queued_document(
     document_id: str,
     workspace_id: UUID = Depends(get_required_workspace_id),
-    handler: IngestDocumentHandler = Depends(get_ingest_pipeline_handler),
 ) -> CompileDocumentJobResponse:
-    import asyncio
-    import uuid
-
     info = DOCUMENTS.get(document_id)
     if info is None or info.get("workspace_id") != str(workspace_id):
         raise HTTPException(status_code=404, detail="document not found")
@@ -202,50 +192,15 @@ async def compile_queued_document(
         )
 
     stored_path = str(info["stored_path"])
-    task_id = str(uuid.uuid4())
-    TASK_STATUS[task_id] = {
-        "status": "pending",
-        "total_chunks": 0,
-        "successful": 0,
-        "failed": 0,
-        "error": None,
-        "document_id": document_id,
-    }
+    task_id = await enqueue_compile_document(
+        document_id=document_id,
+        file_path=stored_path,
+        domain=str(info["domain"]),
+        workspace_id=str(workspace_id),
+    )
     info["compile_task_id"] = task_id
     info["status"] = "compiling"
     info["error"] = None
-
-    async def _run() -> None:
-        TASK_STATUS[task_id]["status"] = "running"
-        try:
-            result = await handler.handle(
-                IngestDocumentCommand(
-                    workspace_id=str(workspace_id),
-                    file_path=stored_path,
-                    domain=str(info["domain"]),
-                )
-            )
-            failed_count = _coerce_int(result.get("failed"), 0)
-            TASK_STATUS[task_id].update(
-                {
-                    "status": "completed" if failed_count == 0 else "partial",
-                    "total_chunks": _coerce_int(result.get("total_chunks"), 0),
-                    "successful": _coerce_int(result.get("successful"), 0),
-                    "failed": failed_count,
-                }
-            )
-            chunk_errors = result.get("errors")
-            if isinstance(chunk_errors, list) and chunk_errors:
-                first = chunk_errors[0]
-                if isinstance(first, dict) and first.get("error"):
-                    TASK_STATUS[task_id]["error"] = str(first["error"])
-        except Exception as exc:
-            TASK_STATUS[task_id]["status"] = "failed"
-            TASK_STATUS[task_id]["error"] = str(exc)
-        finally:
-            _sync_document_from_task(document_id, task_id)
-
-    asyncio.create_task(_run())
     return CompileDocumentJobResponse(
         document_id=document_id,
         task_id=task_id,
@@ -255,20 +210,29 @@ async def compile_queued_document(
 
 @router.get("/status/{task_id}", response_model=IngestStatusResponse)
 async def ingest_status(task_id: str) -> IngestStatusResponse:
-    info = TASK_STATUS.get(task_id)
-    if info is None:
-        raise HTTPException(status_code=404, detail="task not found")
+    info = await fetch_task_status(task_id)
+    if info.get("document_id") is None:
+        for document_id, document in DOCUMENTS.items():
+            if document.get("compile_task_id") == task_id:
+                info["document_id"] = document_id
+                workspace_value = document.get("workspace_id")
+                info["workspace_id"] = str(workspace_value) if workspace_value is not None else None
+                break
 
-    document_id = info.get("document_id")
-    if isinstance(document_id, str):
-        _sync_document_from_task(document_id, task_id)
+    result_document_id = info.get("document_id")
+    if isinstance(result_document_id, str) and result_document_id in DOCUMENTS:
+        await _sync_document_from_task(result_document_id, task_id)
 
     errors_raw = info.get("errors")
+    error_value = info.get("error")
     return IngestStatusResponse(
         status=str(info.get("status", "unknown")),
-        total_chunks=int(info.get("total_chunks", 0)),
-        successful=int(info.get("successful", 0)),
-        failed=int(info.get("failed", 0)),
-        error=str(info["error"]) if info.get("error") is not None else None,
-        errors=errors_raw if isinstance(errors_raw, list) else [],
+        document_id=str(info["document_id"]) if info.get("document_id") else None,
+        workspace_id=str(info["workspace_id"]) if info.get("workspace_id") else None,
+        trace_id=str(info["trace_id"]) if info.get("trace_id") else None,
+        total_chunks=_coerce_int(info.get("total_chunks"), 0),
+        successful=_coerce_int(info.get("successful"), 0),
+        failed=_coerce_int(info.get("failed"), 0),
+        error=_coerce_optional_str(error_value),
+        errors=cast(list[dict[str, object]], errors_raw) if isinstance(errors_raw, list) else [],
     )

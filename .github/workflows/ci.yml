@@ -50,34 +50,30 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
         run: |
-          cd apps/backend
-          pip install -e ".[dev]"
+          uv sync --directory apps/backend --extra dev
 
       - name: Import Architecture Check (import-linter)
         run: |
-          cd apps/backend
-          lint-imports
+          uv run --directory apps/backend lint-imports
 
       - name: Type Check (mypy)
         run: |
-          cd apps/backend
-          mypy src/
+          uv run --directory apps/backend mypy src/
 
       - name: Lint (ruff)
         run: |
-          cd apps/backend
-          ruff check src/ tests/
+          uv run --directory apps/backend ruff check src/ tests/
 
       - name: Format Check (ruff)
         run: |
-          cd apps/backend
-          ruff format --check src/ tests/
+          uv run --directory apps/backend ruff format --check src/ tests/
 
       - name: Run Tests
         run: |
-          cd apps/backend
-          python3 -m pytest tests/ -q --tb=short
+          uv run --directory apps/backend python3 -m pytest tests/ -q --tb=short

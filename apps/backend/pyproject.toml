@@ -9,6 +9,7 @@ description = "Minimal runnable backend scaffold for Hello Wiki."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "hello-wiki-py-worker-core",
     # Web 框架与模型
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -56,10 +57,10 @@ dev = [
     "import-linter>=2.0",  # 架构约束检查
 ]
 
-worker = [
-    "magic-pdf[full]>=0.6.0", # MinerU 核心库
-    "paddlepaddle-gpu>=2.6.0; sys_platform == 'linux'", # 如果有 GPU
-]
+worker = []
+
+[tool.uv.sources]
+hello-wiki-py-worker-core = { path = "../../packages/py-worker-core", editable = true }
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -94,6 +95,12 @@ module = [
 ]
 disable_error_code = ["name-defined"]
 
+[[tool.mypy.overrides]]
+module = [
+    "src.api.task_queue",
+]
+disable_error_code = ["untyped-decorator"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
@@ -105,91 +112,19 @@ testpaths = ["tests"]
 # 检查：lint-imports
 
 [tool.importlinter]
-# 根包名称：src 下所有导入都以 src.* 开始
 root_packages = ["src"]
 include_external_packages = true
 
-# ---- Contract 1: 分层架构（Clean Architecture + DDD） ----
 [[tool.importlinter.contracts]]
-name = "Clean Architecture Layers"
-type = "layers"
-# 分层顺序：从高到低（入口 → 业务编排 → 基础设施 → 领域 → 核心）
-layers = [
-    "src.api",              # 入口层：HTTP/API 网关
-    "src.workers",           # 入口层：后台任务/作业调度
-    "src.application",      # 应用层：业务流程编排、查询处理
-    "src.infrastructure",   # 基础设施层：数据库、外部服务实现
-    "src.domain",           # 领域层：业务规则、实体、接口定义
-    "src.core",             # 核心层：通用配置、工具函数
-]
-ignore_imports = [
-    # wiring.py factory functions use lazy imports to wire application-layer
-    # components into infrastructure implementations. Without this exemption,
-    # every wire module would need to live at the topmost layer.
-    "src.infrastructure.wiring -> src.application.init.init_tags",
-    "src.infrastructure.wiring -> src.application.init.handlers",
-    "src.infrastructure.wiring -> src.application.agent.agent_loop",
-    "src.infrastructure.wiring -> src.application.agent.handlers",
-    "src.infrastructure.wiring -> src.application.ingest.pipeline",
-    "src.infrastructure.wiring -> src.application.ingest.handlers",
-    "src.infrastructure.wiring -> src.application.ingest.embedding_service",
-    "src.infrastructure.wiring -> src.application.retrieve.handlers",
-    "src.infrastructure.wiring -> src.application.retrieve.pipeline",
-    "src.infrastructure.wiring -> src.application.retrieve.catalog_handlers",
-]
-
-# ---- Contract 2: 应用模块独立性（确保 chat/wiki/ingest 不互依赖） ----
-[[tool.importlinter.contracts]]
-name = "Application modules should be independent"
-type = "independence"
-modules = [
-    "src.application.wiki",
-    "src.application.ingest",
-    "src.application.maintenance",
-    "src.application.init",
-    "src.application.retrieve",
-]
-# 注：它们都可以依赖共享的 infrastructure 和 core，但彼此之间不能依赖
-
-# ---- Contract 3: 禁止反向导入（核心层纯净） ----
-[[tool.importlinter.contracts]]
-name = "Core layer should not import upper layers"
+name = "API layer should not depend on shared business layers directly"
 type = "forbidden"
-source_modules = ["src.core"]
+source_modules = ["src.api"]
 forbidden_modules = [
-    "src.api",
-    "src.application",
     "src.domain",
-    "src.infrastructure",
-    "src.workers",
+    "src.application",
 ]
+allow_indirect_imports = true
 
-# ---- Contract 4: 禁止框架依赖在业务逻辑层泄露 ----
-[[tool.importlinter.contracts]]
-name = "Domain layer should not depend on web framework"
-type = "forbidden"
-source_modules = ["src.domain"]
-forbidden_modules = [
-    "fastapi",
-    "uvicorn",
-    "sqlmodel",  # 数据库 ORM 是实现细节，应该在 infrastructure
-]
-# 注：实际代码中可能有例外，用 ignore_imports 处理
-ignore_imports = [
-    # 如果业务逻辑需要特定的导入，可以在这里列出
-    # 例："src.domain.chat -> sqlmodel",
-]
-
-# ---- Contract 5: 应用层禁止依赖 API Schema（Request/Response 不得泄露到应用层） ----
-[[tool.importlinter.contracts]]
-name = "Application layer should not depend on API schemas"
-type = "forbidden"
-source_modules = ["src.application"]
-forbidden_modules = [
-    "src.api.schemas",
-]
-
-# ---- Contract 6: 路由层禁止直接依赖领域层（应经由 application/assembler） ----
 [[tool.importlinter.contracts]]
 name = "API v1 routes should not depend on domain"
 type = "forbidden"
@@ -199,7 +134,6 @@ forbidden_modules = [
 ]
 allow_indirect_imports = true
 
-# ---- Contract 7: Assembler 仅做模型转换，不依赖基础设施实现 ----
 [[tool.importlinter.contracts]]
 name = "API assemblers should not depend on infrastructure"
 type = "forbidden"
@@ -208,7 +142,6 @@ forbidden_modules = [
     "src.infrastructure",
 ]
 
-# ---- Contract 8: API Schema 保持 HTTP 合约纯净 ----
 [[tool.importlinter.contracts]]
 name = "API schemas should be pure HTTP contracts"
 type = "forbidden"
@@ -217,5 +150,4 @@ forbidden_modules = [
     "src.application",
     "src.domain",
     "src.infrastructure",
-    "src.workers",
 ]

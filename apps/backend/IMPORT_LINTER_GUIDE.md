@@ -116,7 +116,7 @@ This violates the contract that higher layers can import lower layers.
 
 #### 8. API Schemas Should Be Pure HTTP Contracts（Schema 保持 HTTP 合约纯净）
 - **类型**：`forbidden`
-- **规则**：`src.api.schemas` 不能导入 `src.application`、`src.domain`、`src.infrastructure`、`src.workers`
+- **规则**：`src.api.schemas` 不能导入 `src.application`、`src.domain`、`src.infrastructure`
 - **原因**：API 合约模型应与业务和实现解耦
 
 ## 常见问题
@@ -183,8 +183,6 @@ lint-architecture:
 ```
 ┌─────────────────────┐
 │    src.api          │  ← HTTP 请求入口
-├─────────────────────┤
-│   src.workers       │  ← 异步任务入口
 ├─────────────────────┤
 │  src.application    │  ← 业务流程、查询处理
 ├─────────────────────┤

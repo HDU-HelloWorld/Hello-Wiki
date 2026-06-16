@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hello-wiki-py-worker-core"
+version = "0.1.0"
+description = "Shared Python runtime for Hello Wiki backend and worker."
+requires-python = ">=3.11"
+dependencies = [
+    "sqlmodel>=0.0.22",
+    "pydantic-settings>=2.4.0",
+    "httpx>=0.27.0",
+    "psycopg2-binary>=2.9.9",
+    "asyncpg>=0.29.0",
+    "redis>=5.0.0",
+    "llama-index>=0.11.0",
+    "llama-index-vector-stores-postgres>=0.2.0",
+    "llama-index-llms-openai>=0.2.0",
+    "llama-index-embeddings-openai>=0.2.0",
+    "instructor>=1.3.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "langchain-text-splitters>=0.3.0",
+    "sqlalchemy>=2.0.49",
+    "opentelemetry-api>=1.41.0,<2.0.0",
+    "opentelemetry-sdk>=1.41.0,<2.0.0",
+    "opentelemetry-exporter-otlp>=1.41.0,<2.0.0",
+    "opentelemetry-instrumentation>=0.62b0,<1.0.0",
+    "opentelemetry-instrumentation-fastapi>=0.62b0,<1.0.0",
+    "openinference-instrumentation-llama-index>=4.3.9",
+    "llama-index-callbacks-arize-phoenix>=0.2.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["src*"]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import cast
 from uuid import UUID
 
 from fastapi import Header, HTTPException, status
@@ -65,13 +66,13 @@ def get_workspace_id(x_workspace_id: str | None = Header(default=None)) -> UUID 
     if x_workspace_id is not None:
         parsed = parse_workspace_id(x_workspace_id)
         if parsed:
-            return parsed
+            return cast(UUID, parsed)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid X-Workspace-ID header",
         )
 
-    ctx_workspace_id = get_workspace_id_from_context()
+    ctx_workspace_id = cast(UUID | None, get_workspace_id_from_context())
     if ctx_workspace_id:
         return ctx_workspace_id
 
@@ -89,4 +90,4 @@ def get_required_workspace_id(x_workspace_id: str | None = Header(default=None))
 
 
 def get_execution_context() -> ExecutionContext | None:
-    return get_execution_context_from_context()
+    return cast(ExecutionContext | None, get_execution_context_from_context())
