@@ -42,7 +42,7 @@
 ### Contract 1: API 层隔离
 ```
 源: src.api
-禁止: src.domain, src.application, src.workers
+禁止: src.domain, src.application
 允许: src.core, src.infrastructure, src.api
 理由: 网关层是技术细节，通过 DI 容器组装业务逻辑
 ```
@@ -50,7 +50,7 @@
 ### Contract 2: Application 层隔离
 ```
 源: src.application
-禁止: src.api, src.workers
+禁止: src.api
 允许: src.core, src.infrastructure, src.domain, src.application
 理由: 应用逻辑独立于 HTTP 框架和消息队列实现
 ```
@@ -58,7 +58,7 @@
 ### Contract 3: Domain 层纯净 ⭐️ (最严格)
 ```
 源: src.domain
-禁止: src.core, src.application, src.api, src.infrastructure, src.workers
+禁止: src.core, src.application, src.api, src.infrastructure
 允许: src.domain 仅
 理由: 业务知识完全独立，可在任何上下文重用（CLI、API、Worker、测试）
 ```
@@ -66,17 +66,16 @@
 ### Contract 4: Infrastructure 层隔离
 ```
 源: src.infrastructure
-禁止: src.api, src.application, src.workers
+禁止: src.api, src.application
 允许: src.core, src.domain, src.infrastructure
 理由: 适配器是实现细节，不能依赖上层
 ```
 
-### Contract 5: Worker 层隔离
+### Contract 5: Worker 独立化
 ```
-源: src.workers
-禁止: src.api
-允许: src.core, src.infrastructure, src.domain, src.application, src.workers
-理由: 消息驱动架构，不依赖 HTTP 框架
+Worker 入口迁移到 apps/worker
+共享逻辑迁移到 packages/py-worker-core
+backend 不再承载 src.workers
 ```
 
 ---

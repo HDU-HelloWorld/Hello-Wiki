@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-import asyncio
-from collections.abc import Coroutine
-from typing import Any
 from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.api import deps
+from src.api.v1 import ingest as ingest_module
 from src.api.v1.ingest import router as ingest_router
 from src.api.v1.init import router as init_router
 from src.api.v1.retrieve import router as retrieve_router
-from src.application.ingest.commands import IngestDocumentCommand
 from src.application.init.init_tags import Category, LeafTag, TagTreeSchema
 from src.domain.knowledge.retrieve_vo import SearchHit
 
@@ -71,22 +68,20 @@ def test_ingest_upload_queues_document_without_running_pipeline() -> None:
     assert any(item["document_id"] == payload["document_id"] for item in items)
 
 
-def test_ingest_compile_starts_pipeline_for_queued_document(monkeypatch) -> None:
+def test_ingest_compile_enqueues_task_for_queued_document(monkeypatch) -> None:
     app = FastAPI()
-    captured: dict[str, IngestDocumentCommand] = {}
-    scheduled: list[Coroutine[Any, Any, None]] = []
+    captured: dict[str, object] = {}
 
-    class FakeIngestHandler:
-        async def handle(self, command: IngestDocumentCommand) -> dict[str, object]:
-            captured["command"] = command
-            return {"total_chunks": 1, "successful": 1, "failed": 0, "results": [], "errors": []}
+    async def fake_enqueue_compile_document(**kwargs: object) -> str:
+        captured.update(kwargs)
+        return "task-queued-001"
 
-    def fake_create_task(coro: Coroutine[Any, Any, None]) -> object:
-        scheduled.append(coro)
-        return object()
-
-    monkeypatch.setattr(asyncio, "create_task", fake_create_task)
-    app.dependency_overrides[deps.get_ingest_pipeline_handler] = FakeIngestHandler
+    monkeypatch.setattr(
+        ingest_module,
+        "enqueue_compile_document",
+        fake_enqueue_compile_document,
+        raising=False,
+    )
     app.include_router(ingest_router, prefix="/api/v1")
     client = TestClient(app)
 
@@ -105,9 +100,85 @@ def test_ingest_compile_starts_pipeline_for_queued_document(monkeypatch) -> None
 
     assert compile_response.status_code == 200
     assert compile_response.json()["status"] == "compiling"
-    assert len(scheduled) == 1
-    asyncio.run(scheduled[0])
-    assert captured["command"].workspace_id == "00000000-0000-0000-0000-000000000104"
+    assert compile_response.json()["task_id"] == "task-queued-001"
+    assert captured["document_id"] == document_id
+    assert captured["workspace_id"] == "00000000-0000-0000-0000-000000000104"
+    assert captured["file_path"]
+    assert captured["domain"] == "general"
+
+
+def test_ingest_status_reads_result_backend(monkeypatch) -> None:
+    app = FastAPI()
+
+    async def fake_fetch_task_status(task_id: str) -> dict[str, object]:
+        assert task_id == "task-result-001"
+        return {
+            "status": "completed",
+            "document_id": "doc-001",
+            "workspace_id": "00000000-0000-0000-0000-000000000104",
+            "trace_id": "trace-001",
+            "total_chunks": 3,
+            "successful": 3,
+            "failed": 0,
+            "error": None,
+            "errors": [],
+        }
+
+    monkeypatch.setattr(
+        ingest_module,
+        "fetch_task_status",
+        fake_fetch_task_status,
+        raising=False,
+    )
+    app.include_router(ingest_router, prefix="/api/v1")
+    client = TestClient(app)
+
+    response = client.get("/api/v1/ingest/status/task-result-001")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "completed",
+        "document_id": "doc-001",
+        "workspace_id": "00000000-0000-0000-0000-000000000104",
+        "trace_id": "trace-001",
+        "total_chunks": 3,
+        "successful": 3,
+        "failed": 0,
+        "error": None,
+        "errors": [],
+    }
+
+
+def test_ingest_status_reports_pending_when_result_not_ready(monkeypatch) -> None:
+    app = FastAPI()
+
+    async def fake_fetch_task_status(task_id: str) -> dict[str, object]:
+        assert task_id == "task-pending-001"
+        return {
+            "status": "pending",
+            "document_id": "doc-002",
+            "workspace_id": "00000000-0000-0000-0000-000000000104",
+            "trace_id": None,
+            "total_chunks": 0,
+            "successful": 0,
+            "failed": 0,
+            "error": None,
+            "errors": [],
+        }
+
+    monkeypatch.setattr(
+        ingest_module,
+        "fetch_task_status",
+        fake_fetch_task_status,
+        raising=False,
+    )
+    app.include_router(ingest_router, prefix="/api/v1")
+    client = TestClient(app)
+
+    response = client.get("/api/v1/ingest/status/task-pending-001")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "pending"
 
 
 def test_init_tags_returns_counts() -> None:

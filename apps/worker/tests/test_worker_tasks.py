@@ -6,14 +6,15 @@ from types import SimpleNamespace
 
 from src.domain.maintenance.entities import MaintenanceTask, TaskType
 from src.infrastructure.db.repositories.async_wiki_repo_adapter import AsyncWikiRepositoryAdapter
-from src.workers import tasks
+from src.core.task_names import RUN_DEDUPE_TASK_NAME
+import hello_wiki_worker.tasks as tasks
 
 
-def _build_taskiq_context() -> object:
+def _build_taskiq_context(task_name: str = RUN_DEDUPE_TASK_NAME) -> object:
     return SimpleNamespace(
         message=SimpleNamespace(
             task_id="task-async-001",
-            task_name="src.workers.tasks.run_dedupe_workflow",
+            task_name=task_name,
             labels={},
         )
     )
@@ -83,3 +84,46 @@ def test_run_dedupe_workflow_uses_shared_repository_builder(monkeypatch) -> None
     )
 
     assert called["count"] == 1
+
+
+def test_compile_document_async_executes_pipeline_and_returns_result(monkeypatch) -> None:
+    captured = {}
+
+    class FakePipeline:
+        async def execute(self, command):
+            captured["command"] = command
+            return {
+                "total_chunks": 4,
+                "successful": 3,
+                "failed": 1,
+                "errors": [{"error": "chunk failed"}],
+            }
+
+    monkeypatch.setattr(tasks, "build_ingest_pipeline", lambda: FakePipeline())
+    monkeypatch.setattr(tasks, "start_observability_span", lambda *args, **kwargs: nullcontext())
+    monkeypatch.setattr(tasks, "annotate_current_span", lambda *args, **kwargs: None)
+
+    result = asyncio.run(
+        tasks.compile_document_async(
+            document_id="doc-001",
+            file_path="/tmp/policy.txt",
+            domain="general",
+            workspace_id="00000000-0000-0000-0000-000000000122",
+            trace_id="trace-worker-ingest-001",
+            context=_build_taskiq_context(task_name="hello_wiki.worker.compile_document"),
+        )
+    )
+
+    assert captured["command"].workspace_id == "00000000-0000-0000-0000-000000000122"
+    assert captured["command"].file_path == "/tmp/policy.txt"
+    assert result == {
+        "status": "partial",
+        "document_id": "doc-001",
+        "workspace_id": "00000000-0000-0000-0000-000000000122",
+        "trace_id": "trace-worker-ingest-001",
+        "total_chunks": 4,
+        "successful": 3,
+        "failed": 1,
+        "error": None,
+        "errors": [{"error": "chunk failed"}],
+    }

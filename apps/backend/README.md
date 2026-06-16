@@ -67,7 +67,7 @@ pnpm --filter agent-ai serve
 python run.py
 
 # 可选：启动 Worker 进程（后台异步任务）
-python worker.py
+cd ../worker && uv run python worker.py
 
 # MVP 阶段统一默认租户启动（自动注入 X-Workspace-ID）
 PYTHONPATH="$PWD" python scripts/mvp.py
@@ -181,7 +181,7 @@ PYTHONPATH="$PWD" python scripts/mvp.py
 ├── README.md                ← 项目说明
 ├── pyproject.toml           ← Python 构建与工具配置
 ├── run.py                   ← API 启动入口
-├── worker.py                ← Worker 启动入口
+├── ../worker/worker.py      ← 独立 Worker 启动入口
 ├── scripts/
 │   └── mvp.py               ← MVP 本地开发注入器
 ├── deploy/

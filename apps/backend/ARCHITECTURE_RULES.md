@@ -17,7 +17,7 @@
 
 1. `Clean Architecture Layers`
    - 用 `layers` 约束分层依赖方向
-   - 当前顺序：`src.api` -> `src.workers` -> `src.application` -> `src.infrastructure` -> `src.domain` -> `src.core`
+   - 当前顺序：`src.api` -> `src.application` -> `src.infrastructure` -> `src.domain` -> `src.core`
 
 2. `Application modules should be independent`
    - 确保 `src.application.wiki`、`src.application.ingest`、`src.application.maintenance` 等应用子模块彼此独立
@@ -40,7 +40,7 @@
    - 保证 assembler 只做模型转换，不引入基础设施实现依赖
 
 8. `API schemas should be pure HTTP contracts`
-   - 约束 `src.api.schemas` 不依赖 `application/domain/infrastructure/workers`
+   - 约束 `src.api.schemas` 不依赖 `application/domain/infrastructure`
    - 保持 Request/Response 模型的边界纯净
 
 ## 实现约束（非 import-linter）
@@ -55,7 +55,7 @@
 ### 共享 Wiring 约束
 
 - 依赖构建统一放在 `src/infrastructure/wiring.py`。
-- `src/api/deps.py` 与 `src/workers/tasks.py` 必须复用 wiring，禁止重复构建相同依赖链。
+- `src/api/deps.py` 与 `apps/worker/src/hello_wiki_worker/tasks.py` 必须复用 wiring，禁止重复构建相同依赖链。
 
 ### workspace_id 处理约束
 

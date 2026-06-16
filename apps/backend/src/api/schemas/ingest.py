@@ -31,6 +31,9 @@ class CompileDocumentJobResponse(BaseModel):
 
 class IngestStatusResponse(BaseModel):
     status: str  # pending / running / completed / failed / partial
+    document_id: str | None = None
+    workspace_id: str | None = None
+    trace_id: str | None = None
     total_chunks: int = 0
     successful: int = 0
     failed: int = 0

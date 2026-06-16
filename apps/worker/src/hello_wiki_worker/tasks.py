@@ -3,8 +3,9 @@ from uuid import UUID
 from taskiq import Context as TaskiqContext
 from taskiq import TaskiqDepends
 
+from hello_wiki_worker.broker import broker
+from src.application.ingest.commands import IngestDocumentCommand
 from src.application.maintenance.dedupe_workflow import DedupeWorkflow, RunDedupeWorkflowCommand
-from src.core.config import settings
 from src.core.context import (
     ExecutionContext,
     clear_execution_context,
@@ -17,18 +18,13 @@ from src.core.observability import (
     set_current_execution_context,
     start_observability_span,
 )
+from src.core.task_names import COMPILE_DOCUMENT_TASK_NAME, RUN_DEDUPE_TASK_NAME
 from src.core.tracing import apply_async_context
-from src.infrastructure.wiring import build_async_wiki_repository, build_search_engine
-from src.workers.broker import broker
-
-# 提示：在这里不需要手动 import src.workers.tasks
-# 因为 worker.py 里的 modules 参数会自动加载它们
-
-
-@broker.task
-async def ping_worker() -> str:
-    return "pong"
-
+from src.infrastructure.wiring import (
+    build_async_wiki_repository,
+    build_ingest_pipeline,
+    build_search_engine,
+)
 
 TaskContext = ExecutionContext
 
@@ -95,11 +91,12 @@ def build_task_context(
     )
 
 
-@broker.task
+@broker.task(task_name=COMPILE_DOCUMENT_TASK_NAME)
 async def compile_document_async(
-    source_document_id: str,
-    title: str,
-    workspace_id: str | None = None,
+    document_id: str,
+    file_path: str,
+    domain: str,
+    workspace_id: str,
     trace_id: str | None = None,
     context: TaskiqContext = TaskiqDepends(),
 ) -> dict[str, object]:
@@ -123,10 +120,9 @@ async def compile_document_async(
             task_retry_max=task_context.max_retries,
             task_retry_on_error=task_context.retry_on_error,
             extra_attributes={
-                "source_document_id": source_document_id,
-                "document.title": title,
-                "document.workflow": "compile",
-                "hello_wiki.workspace_valid": task_context.workspace_valid,
+                "document_id": document_id,
+                "document.path": file_path,
+                "document.domain": domain,
             },
         ):
             annotate_current_span(
@@ -146,26 +142,30 @@ async def compile_document_async(
                     retry_on_error=task_context.retry_on_error,
                 ),
                 {
-                    "source_document_id": source_document_id,
-                    "document.title": title,
+                    "document_id": document_id,
+                    "document.path": file_path,
+                    "document.domain": domain,
                 },
             )
+            pipeline = build_ingest_pipeline()
+            result = await pipeline.execute(
+                IngestDocumentCommand(
+                    workspace_id=workspace_id,
+                    file_path=file_path,
+                    domain=domain,
+                )
+            )
+            failed_count = _parse_int_label(result.get("failed"), 0)
             return {
-                "source_document_id": source_document_id,
-                "title": title,
-                "workspace_id": task_context.raw_workspace_id or "",
+                "status": "completed" if failed_count == 0 else "partial",
+                "document_id": document_id,
+                "workspace_id": workspace_id,
                 "trace_id": task_context.trace_id,
-                "workspace_valid": str(task_context.workspace_valid).lower(),
-                "task_id": task_context.task_id,
-                "task_name": task_context.task_name,
-                "task_queue": task_context.task_queue,
-                "retry_count": str(task_context.retry_count),
-                "max_retries": str(task_context.max_retries)
-                if task_context.max_retries is not None
-                else "",
-                "retry_on_error": str(task_context.retry_on_error).lower(),
-                "status": "queued",
-                "redis": settings.REDIS_URL,
+                "total_chunks": _parse_int_label(result.get("total_chunks"), 0),
+                "successful": _parse_int_label(result.get("successful"), 0),
+                "failed": failed_count,
+                "error": None,
+                "errors": result.get("errors") if isinstance(result.get("errors"), list) else [],
             }
     finally:
         clear_current_execution_context()
@@ -174,7 +174,7 @@ async def compile_document_async(
         set_workspace_id(None)
 
 
-@broker.task
+@broker.task(task_name=RUN_DEDUPE_TASK_NAME)
 async def run_dedupe_workflow(
     workspace_id: str,
     trace_id: str | None = None,
@@ -199,9 +199,7 @@ async def run_dedupe_workflow(
             task_retry_count=task_context.retry_count,
             task_retry_max=task_context.max_retries,
             task_retry_on_error=task_context.retry_on_error,
-            extra_attributes={
-                "hello_wiki.workspace_valid": task_context.workspace_valid,
-            },
+            extra_attributes={"hello_wiki.workspace_valid": task_context.workspace_valid},
         ):
             annotate_current_span(
                 ExecutionContext(
@@ -224,68 +222,30 @@ async def run_dedupe_workflow(
             if not task_context.workspace_valid or task_context.workspace_id is None:
                 return {
                     "status": "failed",
-                    "error": "invalid workspace_id",
                     "workspace_id": workspace_id,
                     "trace_id": task_context.trace_id,
-                    "task_id": task_context.task_id,
-                    "task_name": task_context.task_name,
-                    "task_queue": task_context.task_queue,
-                    "retry_count": task_context.retry_count,
-                    "max_retries": task_context.max_retries,
-                    "retry_on_error": task_context.retry_on_error,
+                    "candidate_count": 0,
+                    "error": "invalid workspace_id",
+                    "errors": [],
                 }
 
             workflow = DedupeWorkflow(
                 repository=build_async_wiki_repository(),
                 search_engine=build_search_engine(),
             )
-
             result = await workflow.execute(
                 RunDedupeWorkflowCommand(workspace_id=task_context.workspace_id)
             )
             return {
-                "task_id": str(result.task.task_id),
-                "task_type": result.task.task_type.value,
                 "status": result.task.status.value,
                 "workspace_id": str(result.task.workspace_id),
                 "trace_id": task_context.trace_id,
-                "task_name": task_context.task_name,
-                "task_queue": task_context.task_queue,
-                "retry_count": task_context.retry_count,
-                "max_retries": task_context.max_retries,
-                "retry_on_error": task_context.retry_on_error,
                 "candidate_count": len(result.candidates),
+                "error": None,
+                "errors": [],
             }
     finally:
         clear_current_execution_context()
         clear_execution_context()
         set_trace_id(None)
         set_workspace_id(None)
-
-
-@broker.task
-async def ingest_document(
-    file_path: str,
-    domain: str = "general",
-    workspace_id: str | None = None,
-    trace_id: str | None = None,
-    context: TaskiqContext = TaskiqDepends(),
-) -> dict[str, object]:
-    task_context = build_task_context(context, workspace_id, trace_id)
-    from src.application.ingest.commands import IngestDocumentCommand
-    from src.infrastructure.wiring import build_ingest_pipeline
-
-    pipeline = build_ingest_pipeline()
-    command = IngestDocumentCommand(
-        workspace_id=str(task_context.workspace_id or ""),
-        file_path=file_path,
-        domain=domain,
-    )
-    result = await pipeline.execute(command)
-    return {
-        "status": "completed" if result["failed"] == 0 else "partial",
-        "total_chunks": result["total_chunks"],
-        "successful": result["successful"],
-        "failed": result["failed"],
-        "task_id": task_context.task_id,
-    }

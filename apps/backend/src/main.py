@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.gateway import register_gateway_middleware
 from src.api.router import api_router
+from src.api.task_queue import broker as taskiq_broker
 from src.core.logging import configure_logging, get_logger
 from src.infrastructure.observability.otel_runtime import configure_observability_runtime
 
@@ -14,9 +15,7 @@ logger = get_logger(__name__)
 
 
 def _get_broker() -> Any:
-    from src.workers.broker import broker
-
-    return broker
+    return taskiq_broker
 
 
 @asynccontextmanager
