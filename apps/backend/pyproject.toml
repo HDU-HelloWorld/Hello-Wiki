@@ -57,10 +57,17 @@ dev = [
     "import-linter>=2.0",  # 架构约束检查
 ]
 
-worker = []
+worker = [
+    "hello-wiki-worker",
+    "magic-pdf>=0.6.0",
+]
+gpu = [
+    "paddlepaddle>=2.6.0; sys_platform == 'linux'",
+]
 
 [tool.uv.sources]
 hello-wiki-py-worker-core = { path = "../../packages/py-worker-core", editable = true }
+hello-wiki-worker = { path = "../worker", editable = true }
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -36,6 +36,12 @@ source .venv/bin/activate
 # 安装依赖
 pip install -e ".[dev]"
 
+# 如需在 backend 这个环境里直接运行 worker
+pip install -e ".[dev,worker]"
+
+# Linux 且需要 GPU 依赖时
+pip install -e ".[dev,worker,gpu]"
+
 # 构建 TS Agent 与 ingest 模型网关
 cd ../..
 pnpm install
@@ -73,8 +79,11 @@ cd ../worker && uv run python worker.py
 PYTHONPATH="$PWD" python scripts/mvp.py
 ```
 
+如果希望复用 `apps/backend` 的 Python 环境来跑 worker，可先安装 `.[worker]`，再在 `apps/worker` 目录执行 `../backend/.venv/bin/python worker.py`；Linux GPU 环境再额外安装 `.[gpu]`。
+
 Python 侧通过 `AGENT_AI_BASE_URL` 连接 TS Agent 服务，默认值为 `http://127.0.0.1:8766`。
 Python 侧通过 `INGEST_AI_BASE_URL` 连接同一 TS 服务的 ingest 路由（`/extract`、`/init-tags`），默认值为 `http://127.0.0.1:8766`。
+`DOCUMENT_PARSER_BACKEND` 用于选择文档解析后端，默认 `cpu`；如果设为 `gpu`，当前会直接报错，直到真实 GPU 解析链路接入。
 
 已有数据需要补全向量时，可在 `apps/backend` 目录执行（MVP 检索依赖 `pages.truth_embedding`；`summary_vector` 仅占位）：
 

@@ -176,7 +176,12 @@ Copy-Item apps/backend/.env.example apps/backend/.env
 
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres:vibe_coding@localhost:5432/zhiyuan
+DOCUMENT_PARSER_BACKEND=cpu
 ```
+
+`DOCUMENT_PARSER_BACKEND` 当前支持：
+- `cpu`：默认，使用现有 CPU 文档解析链路
+- `gpu`：预留给未来 GPU 解析实现；当前若配置为该值，会显式报错而不是静默降级
 
 #### 方式 A：uv（推荐）
 
@@ -185,6 +190,12 @@ DATABASE_URL=postgresql+asyncpg://postgres:vibe_coding@localhost:5432/zhiyuan
 ```bash
 # 安装后端依赖（含 dev 可选组：pytest、ruff 等）
 uv sync --directory apps/backend --extra dev
+
+# 如需在同一环境里运行 worker，再叠加 worker 依赖
+uv sync --directory apps/backend --extra dev --extra worker
+
+# Linux 且需要 GPU 版解析依赖时，再额外启用 gpu
+uv sync --directory apps/backend --extra dev --extra worker --extra gpu
 
 # 在仓库根启动 API（uv 以 apps/backend 为项目根，.env / 日志路径正确）
 uv run --directory apps/backend python run.py
@@ -203,6 +214,12 @@ uv run --directory apps/backend python scripts/backfill_embeddings.py
 python -m venv apps/backend/.venv
 # 激活 apps/backend/.venv 后，在仓库根执行：
 pip install -e "./apps/backend[dev]"
+
+# 如需同环境运行 worker：
+pip install -e "./apps/backend[dev,worker]"
+
+# Linux 且需要 GPU 依赖：
+pip install -e "./apps/backend[dev,worker,gpu]"
 
 # 仍在仓库根启动（把后端目录加入 PYTHONPATH）
 # PowerShell:

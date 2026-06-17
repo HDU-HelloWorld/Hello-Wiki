@@ -103,11 +103,24 @@
 
 1. `docker compose -f apps/backend/deploy/dev/docker-compose.yml up -d`
 2. `cp apps/backend/.env.example apps/backend/.env`，配置 `LLM_API_KEY`
-3. `uv sync --directory apps/backend --extra dev`（或 pip 安装，见 README）
+3. `uv sync --directory apps/backend --extra dev`
+   - 同环境运行 worker：再加 `--extra worker`
+   - Linux 且需要 GPU 依赖：再加 `--extra gpu`
+   - 或使用 pip 安装，见 README
 4. 仓库根：`pnpm install && pnpm --filter agent-ai build`
 5. `pnpm serve:agent-ai`（`:8766`）
 6. `uv run --directory apps/backend python run.py`（`:8000`；日志 `apps/backend/data/logs/backend.log`）
 7. `pnpm dev`（Web `:3000`）
+
+### Worker 本地检查
+
+```bash
+uv sync --directory apps/worker --extra dev
+uv run --directory apps/worker lint-imports
+uv run --directory apps/worker mypy src/
+uv run --directory apps/worker ruff check src/ tests/
+uv run --directory apps/worker pytest tests/ -q
+```
 
 ### 访问地址
 

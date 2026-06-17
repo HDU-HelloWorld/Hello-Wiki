@@ -77,3 +77,42 @@ jobs:
       - name: Run Tests
         run: |
           uv run --directory apps/backend python3 -m pytest tests/ -q --tb=short
+
+  worker-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          uv sync --directory apps/worker --extra dev
+
+      - name: Import Architecture Check (import-linter)
+        run: |
+          uv run --directory apps/worker lint-imports
+
+      - name: Type Check (mypy)
+        run: |
+          uv run --directory apps/worker mypy src/
+
+      - name: Lint (ruff)
+        run: |
+          uv run --directory apps/worker ruff check src/ tests/
+
+      - name: Format Check (ruff)
+        run: |
+          uv run --directory apps/worker ruff format --check src/ tests/
+
+      - name: Run Tests
+        run: |
+          uv run --directory apps/worker python3 -m pytest tests/ -q --tb=short

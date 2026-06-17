@@ -16,7 +16,7 @@ from src.domain.knowledge.entities import (
 from src.domain.knowledge.repository import KnowledgeRepositoryPort
 from src.infrastructure.ai.extraction_adapter import ExtractedKnowledge, TsExtractionAdapter
 from src.infrastructure.parser.chunker import RecursiveChunker
-from src.infrastructure.parser.document_loader import DocumentLoaderAdapter
+from src.infrastructure.parser.document_loader import DocumentLoaderAdapter, DocumentLoaderPort
 
 
 class ExtractionAdapterPort(Protocol):
@@ -43,12 +43,13 @@ class IngestPipelineUseCase:
         self,
         repository: KnowledgeRepositoryPort,
         extractor: ExtractionAdapterPort | None = None,
+        document_loader: DocumentLoaderPort | None = None,
         chunk_size: int = 1500,
         chunk_overlap: int = 150,
         embedding_service: EmbeddingBackfillService | None = None,
     ) -> None:
         self._repo = repository
-        self._loader = DocumentLoaderAdapter()
+        self._loader = document_loader or DocumentLoaderAdapter()
         self._chunker = RecursiveChunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self._extractor = extractor or TsExtractionAdapter()
         self._embedding_service = embedding_service

@@ -6,6 +6,7 @@ from src.core.config import settings
 from src.infrastructure.ai.search_engine import KeywordSearchEngine
 from src.infrastructure.db.repositories.async_wiki_repo_adapter import AsyncWikiRepositoryAdapter
 from src.infrastructure.db.repositories.wiki_repo import FileSystemWikiRepository
+from src.infrastructure.parser.document_loader import build_document_loader
 
 if TYPE_CHECKING:
     from src.application.agent.agent_loop import AgentLoop
@@ -90,6 +91,7 @@ def build_ingest_pipeline() -> IngestPipelineUseCase:
     )
     return IngestPipelineUseCase(
         repository=repository,
+        document_loader=build_document_loader(),
         extractor=TsExtractionAdapter(),
         embedding_service=embedding_service,
     )

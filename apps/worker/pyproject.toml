@@ -13,14 +13,18 @@ dependencies = [
     "taskiq>=0.11.10",
     "taskiq-redis>=0.5.0",
     "magic-pdf>=0.6.0",
-    "paddlepaddle>=2.6.0; sys_platform == 'linux'",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "import-linter>=2.0",
     "mypy>=1.11.0",
     "pytest>=8.0.0",
     "pytest-asyncio",
+    "ruff>=0.15.0",
+]
+gpu = [
+    "paddlepaddle>=2.6.0; sys_platform == 'linux'",
 ]
 
 [tool.uv.sources]
@@ -31,6 +35,17 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "ASYNC"]
+ignore = ["D100", "D104"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["hello_wiki_worker", "src"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -50,3 +65,44 @@ module = [
     "hello_wiki_worker.tasks",
 ]
 disable_error_code = ["misc"]
+
+[tool.importlinter]
+root_packages = ["hello_wiki_worker", "src"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Worker package should not depend on API layer"
+type = "forbidden"
+source_modules = ["hello_wiki_worker"]
+forbidden_modules = [
+    "src.api",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Worker tasks should reuse wiring instead of direct infrastructure implementations"
+type = "forbidden"
+source_modules = ["hello_wiki_worker.tasks"]
+forbidden_modules = [
+    "src.infrastructure.ai",
+    "src.infrastructure.db",
+    "src.infrastructure.parser",
+]
+allow_indirect_imports = true
+ignore_imports = [
+    "hello_wiki_worker.tasks -> src.infrastructure.wiring",
+]
+
+[[tool.importlinter.contracts]]
+name = "Worker broker and middleware should stay lightweight"
+type = "forbidden"
+source_modules = [
+    "hello_wiki_worker.broker",
+    "hello_wiki_worker.context_middleware",
+]
+forbidden_modules = [
+    "src.application",
+    "src.domain",
+    "src.infrastructure",
+]
+allow_indirect_imports = true
