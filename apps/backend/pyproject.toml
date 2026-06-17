@@ -59,7 +59,7 @@ dev = [
 
 worker = [
     "hello-wiki-worker",
-    "magic-pdf>=0.6.0",
+    "magic-pdf>=0.6.1,<0.7.0",
 ]
 gpu = [
     "paddlepaddle>=2.6.0; sys_platform == 'linux'",
