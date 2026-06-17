@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,6 +43,9 @@ class Settings(BaseSettings):
     # TypeScript ingest extraction gateway
     INGEST_AI_BASE_URL: str = "http://127.0.0.1:8766"
     INGEST_AI_TIMEOUT_SECONDS: float = 120.0
+
+    # Document parser backend
+    DOCUMENT_PARSER_BACKEND: Literal["cpu", "gpu"] = "cpu"
 
     # TypeScript agent loop gateway
     AGENT_AI_BASE_URL: str = "http://127.0.0.1:8766"

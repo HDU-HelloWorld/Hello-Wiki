@@ -4,10 +4,10 @@ import asyncio
 from contextlib import nullcontext
 from types import SimpleNamespace
 
+import hello_wiki_worker.tasks as tasks
+from src.core.task_names import RUN_DEDUPE_TASK_NAME
 from src.domain.maintenance.entities import MaintenanceTask, TaskType
 from src.infrastructure.db.repositories.async_wiki_repo_adapter import AsyncWikiRepositoryAdapter
-from src.core.task_names import RUN_DEDUPE_TASK_NAME
-import hello_wiki_worker.tasks as tasks
 
 
 def _build_taskiq_context(task_name: str = RUN_DEDUPE_TASK_NAME) -> object:

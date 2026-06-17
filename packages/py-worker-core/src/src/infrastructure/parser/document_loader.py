@@ -1,3 +1,4 @@
+from typing import Protocol
 from pathlib import Path
 
 from langchain_community.document_loaders import (
@@ -7,7 +8,11 @@ from langchain_community.document_loaders import (
     UnstructuredMarkdownLoader,
 )
 
+from src.core.config import settings
 from src.domain.ingest.constants import SUPPORTED_INGEST_EXTENSIONS
+
+PARSER_BACKEND_CPU = "cpu"
+PARSER_BACKEND_GPU = "gpu"
 
 LOADER_MAP = {
     ".pdf": PyPDFLoader,
@@ -15,6 +20,10 @@ LOADER_MAP = {
     ".md": UnstructuredMarkdownLoader,
     ".txt": TextLoader,
 }
+
+
+class DocumentLoaderPort(Protocol):
+    def load(self, file_path: str) -> list[str]: ...
 
 
 class DocumentLoaderAdapter:
@@ -32,3 +41,15 @@ class DocumentLoaderAdapter:
         else:
             docs = loader_cls(file_path).load()
         return [d.page_content for d in docs]
+
+
+def build_document_loader(parser_backend: str | None = None) -> DocumentLoaderPort:
+    backend = parser_backend or settings.DOCUMENT_PARSER_BACKEND
+    if backend == PARSER_BACKEND_CPU:
+        return DocumentLoaderAdapter()
+    if backend == PARSER_BACKEND_GPU:
+        raise RuntimeError(
+            "DOCUMENT_PARSER_BACKEND=gpu is configured, "
+            "but the GPU document parser is not implemented yet."
+        )
+    raise ValueError(f"Unsupported document parser backend: {backend}")

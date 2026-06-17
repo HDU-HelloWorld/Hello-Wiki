@@ -20,6 +20,18 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+如需在 `apps/backend` 的环境里顺带跑 worker，可改为：
+
+```bash
+pip install -e ".[dev,worker]"
+```
+
+Linux 且需要 GPU 依赖时，再额外启用 `gpu`：
+
+```bash
+pip install -e ".[dev,worker,gpu]"
+```
+
 如果你使用 fish：
 
 ```fish
@@ -43,6 +55,8 @@ Worker：
 cd apps/worker
 uv run python worker.py
 ```
+
+如果复用 `apps/backend` 的虚拟环境运行 worker，则先安装 `.[worker]`，再执行 `../backend/.venv/bin/python worker.py`。
 
 ### 1.3 常用验证命令
 

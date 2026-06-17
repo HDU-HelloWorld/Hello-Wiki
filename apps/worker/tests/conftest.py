@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import logging
 import sys
 from collections.abc import Iterator
@@ -16,8 +17,11 @@ sys.path.insert(0, str(SHARED_ROOT))
 sys.path.insert(0, str(BACKEND_ROOT))
 sys.path.insert(0, str(WORKER_ROOT / "src"))
 
-from src.core import logging as logging_module
-from src.core.context import clear_execution_context, set_trace_id, set_workspace_id
+logging_module = importlib.import_module("src.core.logging")
+context_module = importlib.import_module("src.core.context")
+clear_execution_context = context_module.clear_execution_context
+set_trace_id = context_module.set_trace_id
+set_workspace_id = context_module.set_workspace_id
 
 
 def reset_runtime_context() -> None:
